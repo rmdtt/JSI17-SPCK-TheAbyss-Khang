@@ -1,98 +1,72 @@
-// Sinh vật
-const depthZones = {
-  shallow: {
-    name: "Vùng nông",
-    minDepth: 0,
-    maxDepth: 50
-  },
+// =====================================
+// DANH SÁCH SINH VẬT THEO ĐỘ SÂU
+// =====================================
 
-  medium: {
-    name: "Vùng trung bình",
-    minDepth: 50,
-    maxDepth: 200
-  },
+const creaturesByDepth = {
+  shallow: [
+    "Amphiprion ocellaris",
+    "Mola mola",
+    "Triaenodon obesus",
+    "Aetobatus narinari",
+    "Chelonia mydas",
+    "Hippocampus kuda",
+    "Scarus ghobban",
+    "Chaetodon auriga",
+    "Bolbometopon muricatum",
+    "Sphyraena barracuda"
+  ],
 
-  deep: {
-    name: "Vùng sâu",
-    minDepth: 200,
-    maxDepth: 1000
-  },
+  medium: [
+    "Argyropelecus hemigymnus",
+    "Benthosema glaciale",
+    "Xiphias gladius",
+    "Scomber japonicus",
+    "Prionace glauca",
+    "Thunnus obesus",
+    "Hexanchus griseus",
+    "Dosidicus gigas",
+    "Stomiidae",
+    "Anguilla anguilla"
+  ],
 
-  abyssal: {
-    name: "Vùng rất sâu",
-    minDepth: 1000,
-    maxDepth: 6000
-  }
+  deep: [
+    "Chauliodus sloani",
+    "Idiacanthus antrostomus",
+    "Melanocetus johnsonii",
+    "Anoplogaster cornuta",
+    "Myctophidae",
+    "Vampyroteuthis infernalis",
+    "Mitsukurina owstoni",
+    "Somniosus microcephalus",
+    "Trachipterus arcticus",
+    "Atolla wyvillei"
+  ],
+
+  abyssal: [
+    "Bathypterois grallator",
+    "Pseudoliparis amblystomopsis",
+    "Coryphaenoides armatus",
+    "Scotoplanes globosa",
+    "Hymenaster pellucidus",
+    "Actiniaria",
+    "Munnopsidae",
+    "Copepoda",
+    "Riftia pachyptila",
+    "Siboglinidae"
+  ]
 };
 
-async function fetchSpeciesByDepth(zone) {
-  const params = new URLSearchParams({
-    startdepth: zone.minDepth,
-    enddepth: zone.maxDepth,
-    size: 1000
-  });
 
-  const response = await fetch(
-    `${OBIS_API}/occurrence?${params}`
-  );
+// =====================================
+// CACHE ẢNH
+// =====================================
 
-  if (!response.ok) {
-    throw new Error(`OBIS error: ${response.status}`);
-  }
+const imageCache = new Map();
 
-  const data = await response.json();
 
-  return data.results || [];
-}
-
-function filterMarineSpecies(records) {
-  return records.filter(record =>
-    record.marine === true ||
-    record.marine === "true"
-  );
-}
-
-function getUniqueSpecies(records) {
-  const speciesMap = new Map();
-
-  records.forEach(record => {
-    const scientificName = record.scientificName;
-
-    if (!scientificName) return;
-
-    if (!speciesMap.has(scientificName)) {
-      speciesMap.set(scientificName, {
-        name: scientificName,
-        scientificName: scientificName,
-        observations: []
-      });
-    }
-
-    speciesMap.get(scientificName).observations.push({
-      depth: record.depth ?? null,
-      latitude: record.decimalLatitude ?? null,
-      longitude: record.decimalLongitude ?? null,
-      date: record.eventDate ?? null
-    });
-  });
-
-  return Array.from(speciesMap.values());
-}
-
-function getRandomSpecies(speciesList, limit) {
-  const shuffled = [...speciesList];
-
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-
-    [shuffled[i], shuffled[j]] =
-      [shuffled[j], shuffled[i]];
-  }
-
-  return shuffled.slice(0, limit);
-}
-
-// Hiển thị sinh vật trực tiếp trong đại dương
+// =====================================
+// TÌM ẢNH WIKIMEDIA
+// =====================================
 
 async function getCreatureImage(scientificName) {
   try {
@@ -116,13 +90,17 @@ async function getCreatureImage(scientificName) {
     if (!response.ok) return null;
 
     const data = await response.json();
-    const pages = Object.values(data.query?.pages || {});
+
+    const pages = Object.values(
+      data.query?.pages || {}
+    );
 
     const image = pages.find(page => {
       const info = page.imageinfo?.[0];
 
       return info &&
-        ["image/jpeg", "image/png", "image/webp"].includes(info.mime);
+        ["image/jpeg", "image/png", "image/webp"]
+          .includes(info.mime);
     });
 
     return image?.imageinfo?.[0]?.thumburl ||
@@ -130,186 +108,208 @@ async function getCreatureImage(scientificName) {
       null;
 
   } catch (error) {
-    console.error("Image error:", error);
+    console.error("Image error:", scientificName, error);
     return null;
   }
 }
 
 
-// Tạo bảng thông tin sinh vật
-function showCreaturePopup(species, observation) {
+// =====================================
+// CACHE ẢNH
+// =====================================
 
-  document.querySelector(".creature-popup")?.remove();
+async function getCachedCreatureImage(scientificName) {
+  if (!imageCache.has(scientificName)) {
+    imageCache.set(
+      scientificName,
+      getCreatureImage(scientificName)
+    );
+  }
 
-  const popup = document.createElement("div");
-
-  popup.className = "creature-popup";
-
-  const title = document.createElement("h3");
-  title.textContent = species.name;
-
-  const scientific = document.createElement("p");
-  scientific.textContent = species.scientificName;
-
-  const depth = document.createElement("p");
-  depth.textContent =
-    "Depth: " +
-    (observation.depth ?? "Unknown") +
-    (observation.depth != null ? " m" : "");
-
-  const location = document.createElement("p");
-  location.textContent =
-    "Coordinates: " +
-    (observation.latitude ?? "Unknown") +
-    ", " +
-    (observation.longitude ?? "Unknown");
-
-  const close = document.createElement("button");
-  close.textContent = "Close";
-  close.onclick = () => popup.remove();
-
-  popup.append(title, scientific, depth, location, close);
-
-  document.body.appendChild(popup);
+  return imageCache.get(scientificName);
 }
 
 
-// Đưa sinh vật vào đại dương
-async function displayCreatures(speciesList) {
-  const layer = document.getElementById("creature-layer");
+// =====================================
+// GIỚI HẠN REQUEST ĐỒNG THỜI
+// =====================================
 
-  if (!layer) return;
+async function mapLimit(items, limit, callback) {
+  const results = new Array(items.length);
 
-  layer.replaceChildren();
+  let nextIndex = 0;
 
-  const marginX = 100;
-  const marginY = 50;
+  async function worker() {
+    while (true) {
+      const index = nextIndex++;
 
-  const oceanWidth = layer.clientWidth;
-  const oceanHeight = layer.clientHeight;
+      if (index >= items.length) return;
 
-  const usableWidth = Math.max(1, oceanWidth - marginX * 2);
-  const usableHeight = Math.max(1, oceanHeight - marginY * 2);
-
-  const creatureSize = 220;
-  const gap = 50;
-
-  const columns = Math.max(
-    1,
-    Math.floor(usableWidth / (creatureSize + gap))
-  );
-
-  const rows = Math.max(
-    1,
-    Math.floor(usableHeight / (creatureSize + gap))
-  );
-
-  const cells = [];
-
-  for (let row = 0; row < rows; row++) {
-    for (let col = 0; col < columns; col++) {
-      cells.push({
-        x: marginX + (col + 0.5) * usableWidth / columns,
-        y: marginY + (row + 0.5) * usableHeight / rows
-      });
+      try {
+        results[index] = await callback(items[index]);
+      } catch (error) {
+        console.error(error);
+        results[index] = null;
+      }
     }
   }
 
-  // Trộn vị trí
-  for (let i = cells.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [cells[i], cells[j]] = [cells[j], cells[i]];
-  }
-
-  const shuffledSpecies = getRandomSpecies(
-    speciesList,
-    Math.min(speciesList.length, cells.length)
+  await Promise.all(
+    Array.from(
+      { length: Math.min(limit, items.length) },
+      () => worker()
+    )
   );
 
-  let displayed = 0;
+  return results;
+}
 
-  for (const species of shuffledSpecies) {
-    const image = await getCreatureImage(
-      species.scientificName
+// =====================================
+// TẠO VỊ TRÍ SINH VẬT
+// =====================================
+
+function generateCreaturePositions(zone, count) {
+  const width = zone.clientWidth;
+  const height = zone.clientHeight;
+
+  const leftReserved = 150;
+  const imageSize = 55;
+  const padding = 10;
+
+  const startX = leftReserved + imageSize / 2;
+  const endX = width - imageSize / 2;
+  const startY = imageSize / 2;
+  const endY = height - imageSize / 2;
+
+  const positions = [];
+
+  if (endX <= startX || endY <= startY) {
+    console.error("Không đủ diện tích:", zone.id);
+    return positions;
+  }
+
+  const columns = Math.min(
+    count,
+    Math.max(1, Math.floor((endX - startX) / 100))
+  );
+
+  const rows = Math.ceil(count / columns);
+
+  for (let i = 0; i < count; i++) {
+    const row = Math.floor(i / columns);
+    const col = i % columns;
+
+    const itemsInRow = Math.min(
+      columns,
+      count - row * columns
     );
 
-    if (!image) {
-      console.log("Không tìm thấy ảnh:", species.scientificName);
-      continue;
-    }
+    const cellWidth = (endX - startX) / itemsInRow;
+    const cellHeight = (endY - startY) / rows;
 
-    if (displayed >= cells.length) break;
-
-    const position = cells[displayed];
-
-    const creature = document.createElement("a");
-
-    creature.className = "ocean-creature";
-
-    creature.href =
-      `ifm.html?species=${encodeURIComponent(species.scientificName)}`;
-
-    creature.style.left = `${position.x}px`;
-    creature.style.top = `${position.y}px`;
-
-    const img = document.createElement("img");
-
-    img.src = image;
-    img.alt = species.scientificName;
-    img.loading = "lazy";
-
-    const name = document.createElement("span");
-    name.textContent = species.name;
-
-    creature.append(img, name);
-    layer.appendChild(creature);
-
-    displayed++;
+    positions.push({
+      x: startX + col * cellWidth + cellWidth / 2,
+      y: startY + row * cellHeight + cellHeight / 2
+    });
   }
 
-  console.log(`Đã hiển thị ${displayed} sinh vật.`);
+  return positions;
 }
 
+// =====================================
+// HIỂN THỊ SINH VẬT
+// =====================================
+
+async function displayCreaturesByZone() {
+  for (const [zoneId, speciesList] of Object.entries(creaturesByDepth)) {
+    try {
+      const zone = document.getElementById(zoneId);
+
+      if (!zone) {
+        console.warn("Không tìm thấy khu vực:", zoneId);
+        continue;
+      }
+
+      // Đảm bảo sinh vật được định vị trong vùng tương ứng
+      zone.style.position = "relative";
+
+      zone.querySelectorAll(".ocean-creature")
+        .forEach(element => element.remove());
+
+      console.log("Đang tải:", zoneId);
+
+      const images = await mapLimit(
+        speciesList,
+        5,
+        name => getCachedCreatureImage(name)
+      );
+
+      const validSpecies = speciesList
+        .map((scientificName, index) => ({
+          scientificName,
+          image: images[index]
+        }))
+        .filter(item => item.image);
+
+      const positions = generateCreaturePositions(
+        zone,
+        validSpecies.length
+      );
+
+      validSpecies.forEach((species, index) => {
+        const position = positions[index];
+
+        if (!position) return;
+
+        const creature = document.createElement("a");
+
+        creature.className = "ocean-creature";
+
+        creature.href =
+          `ifm.html?species=${encodeURIComponent(species.scientificName)}`;
+
+        creature.style.left = `${position.x}px`;
+        creature.style.top = `${position.y}px`;
+
+        const img = document.createElement("img");
+
+        img.src = species.image;
+        img.alt = "";
+        img.loading = "lazy";
+
+        creature.appendChild(img);
+        zone.appendChild(creature);
+      });
+
+      console.log(
+        `${zoneId}: ${zone.querySelectorAll(".ocean-creature").length} sinh vật`
+      );
+
+    } catch (error) {
+      console.error(`Lỗi ở vùng ${zoneId}:`, error);
+    }
+  }
+
+  console.log("The Abyss is ready!");
+}
+
+// =====================================
+// KHỞI CHẠY
+// =====================================
 
 document.addEventListener("DOMContentLoaded", async () => {
-  const layer = document.getElementById("creature-layer");
-
-  if (!layer) return;
 
   try {
     console.log("Exploring The Abyss...");
 
-    // Lấy dữ liệu từ tất cả các vùng độ sâu
-    const results = await Promise.all(
-      Object.values(depthZones).map(zone =>
-        fetchSpeciesByDepth(zone)
-      )
-    );
-
-    const allRecords = results.flat();
-
-    // Chỉ giữ lại bản ghi của sinh vật biển
-    const marineRecords = filterMarineSpecies(allRecords);
-
-    // Gộp các loài biển trùng nhau
-    const uniqueSpecies = getUniqueSpecies(marineRecords);
-
-    // Chọn ngẫu nhiên 30 loài
-    const selectedSpecies = getRandomSpecies(
-      uniqueSpecies,
-      60
-    );
-
-    console.log("Found species:", uniqueSpecies.length);
-
-    await displayCreatures(selectedSpecies);
-
-    console.log("The Abyss is ready!");
+    await displayCreaturesByZone();
 
   } catch (error) {
     console.error("Cannot load creatures:", error);
   }
+
 });
+
 
 // Thanh đo độ sâu
 document.addEventListener("DOMContentLoaded", () => {
@@ -365,4 +365,61 @@ document.addEventListener("DOMContentLoaded", () => {
   window.addEventListener("resize", updateDepth);
 
   updateDepth();
+});
+
+["shallow", "medium", "deep", "abyssal"].forEach(id => {
+    const zone = document.getElementById(id);
+
+    console.log(id, {
+        exists: !!zone,
+        width: zone?.clientWidth,
+        height: zone?.clientHeight,
+        display: zone && getComputedStyle(zone).display,
+        position: zone && getComputedStyle(zone).position
+    });
+});
+
+// =====================================
+// KIỂM TRA CHI TIẾT 4 VÙNG
+// =====================================
+
+function checkOceanZones() {
+  const ids = ["shallow", "medium", "deep", "abyssal"];
+
+  const results = ids.map(id => {
+    const zone = document.getElementById(id);
+
+    if (!zone) {
+      return {
+        Zone: id,
+        Exists: false
+      };
+    }
+
+    const css = getComputedStyle(zone);
+    const rect = zone.getBoundingClientRect();
+
+    return {
+      Zone: id,
+      Exists: true,
+      Width: zone.clientWidth,
+      Height: zone.clientHeight,
+      Display: css.display,
+      Position: css.position,
+      Visibility: css.visibility,
+      Opacity: css.opacity,
+      ZIndex: css.zIndex,
+      Overflow: css.overflow,
+      Creatures: zone.querySelectorAll(".ocean-creature").length,
+      Top: Math.round(rect.top),
+      Left: Math.round(rect.left)
+    };
+  });
+
+  console.log("===== THE ABYSS DEBUG =====");
+  console.table(results);
+}
+
+window.addEventListener("load", () => {
+  setTimeout(checkOceanZones, 1500);
 });

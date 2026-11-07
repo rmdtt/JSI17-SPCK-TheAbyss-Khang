@@ -359,72 +359,59 @@ body {
 }
 
 /* Thông tin khi nhấn vào sinh vật */
-.creature-popup {
-    position: fixed;
-    z-index: 1000;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 300px;
-    padding: 20px;
-    color: white;
-    background: rgba(2, 25, 45, 0.95);
-    border: 1px solid #37c9ef;
-    border-radius: 15px;
-    box-shadow: 0 0 25px #00bfff55;
-}
-
-.creature-popup h3 {
-    color: #55dfff;
-}
-
-.creature-popup button {
-    background: #087fa8;
-    color: white;
-    border: 0;
-    padding: 8px 15px;
-    border-radius: 6px;
-    cursor: pointer;
-}
-
-.ocean {
-    position: relative;
-}
-
 #creature-layer {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 5;
-    pointer-events: none;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.creature-grid {
+  width: 100%;
+  min-height: 350px;
+  padding: 40px;
+  box-sizing: border-box;
+
+  display: grid;
+  grid-template-columns:
+    repeat(auto-fill, minmax(150px, 1fr));
+
+  gap: 30px;
+  align-items: center;
+  justify-items: center;
+}
+
+.creature-grid.shallow {
+  background: #58b8d9;
+}
+
+.creature-grid.medium {
+  background: #287fae;
+}
+
+.creature-grid.deep {
+  background: #164c79;
+}
+
+#shallow,
+#medium,
+#deep,
+#abyssal {
+  position: relative;
+  width: 100%;
 }
 
 .ocean-creature {
-    position: absolute;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    transform: translate(-50%, -50%);
-    text-decoration: none;
-    pointer-events: auto;
-    cursor: pointer;
+  position: absolute;
+  width: 55px;
+  height: 55px;
+  transform: translate(-50%, -50%);
+  z-index: 10;
 }
 
 .ocean-creature img {
-    width: var(--creature-size, 220px);
-    height: var(--creature-size, 220px);
-    object-fit: contain;
-    display: block;
-}
-
-.ocean-creature span {
-    color: white;
-    font-size: 12px;
-    font-weight: bold;
-    text-align: center;
-    text-shadow: 0 2px 5px black;
-    max-width: 150px;
-    overflow-wrap: anywhere;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
