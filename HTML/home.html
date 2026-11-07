@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        .oceansurface {
+            width: 100%;
+            min-height: 75vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            /* Màu bầu trời chuyển dần xuống màu mặt biển */
+            background: linear-gradient(to bottom,
+                    #48c8e8 0%,
+                    #dffff5 55%,
+                    #ffffd5 100%);
+        }
+
+        #content {
+            text-align: center;
+            margin: 20px auto 120px;
+            color: #06446f;
+            font-size: 24px;
+            font-weight: normal;
+        }
+
+
+        #name {
+            text-align: center;
+            margin-top: 100px;
+            color: #061522;
+            font-size: 60px;
+            letter-spacing: 5px;
+            text-shadow: 0 0 15px rgba(54, 217, 255, 0.4);
+        }
+    </style>
+    <link rel="stylesheet" href="/CSS/nav.css">
+    <link rel="stylesheet" href="/CSS/ct&footer.css">
+    <link rel="stylesheet" href="/CSS/home.css">
+    <title>The Abyss</title>
+</head>
+
+<body>
+    <nav class="navbar">
+        <a href="home.html" class="logo">The <span>Abyss</span></a>
+
+        <form class="search-form" action="#" method="get">
+            <input type="search" name="creature" placeholder="Creature's name or depth..."
+                aria-label="Search for a sea creature or depth">
+            <button type="submit">Search</button>
+        </form>
+
+        <ul class="nav-links">
+            <li>
+                <a href="aqurium.html">Your Aquarium</a>
+            </li>
+            <li>
+                <a href="addCre.html" class="add-btn">Add Creature</a>
+            </li>
+        </ul>
+    </nav>
+
+    <div class="oceansurface">
+        <h1 class="content" id="name">THE ABYSS</h1>
+        <h2 class="content" id="content">You will find out a lot of abyss creature there</h2>
+    </div>
+
+    <div class="depth-ruler" id="depth-ruler">
+        <div class="ruler-title">OCEAN DEPTH</div>
+
+        <div class="ruler-track">
+            <div class="ruler-line"></div>
+
+            <span class="depth-mark" style="top: 0%">0 m</span>
+            <span class="depth-mark" style="top: 20%">2,200 m</span>
+            <span class="depth-mark" style="top: 40%">4,400 m</span>
+            <span class="depth-mark" style="top: 60%">6,600 m</span>
+            <span class="depth-mark" style="top: 80%">8,800 m</span>
+            <span class="depth-mark" style="top: 100%">11,000 m</span>
+
+            <div class="submarine-pointer" id="submarine-pointer">
+                <img src="/IMG/submarine.png" alt="">
+            </div>
+        </div>
+
+        <div class="current-depth">
+            <span id="depth-value">0 m</span>
+            <small>CURRENT DEPTH</small>
+        </div>
+    </div>
+
+    <div class="ocean">
+        <div class="bubbles">
+            <span class="bubble"></span>
+            <span class="bubble"></span>
+            <span class="bubble"></span>
+            <span class="bubble"></span>
+            <span class="bubble"></span>
+            <span class="bubble"></span>
+            <span class="bubble"></span>
+            <span class="bubble"></span>
+        </div>
+        <div class="light-rays"></div>
+        <div class="ocean-particles"></div>
+        <div id="creature-layer"></div>
+    </div>
+
+    <footer>
+        <span>
+            The Abyss
+            Very happy for your visit
+            If you have any bad experiences or any questions
+            Please connect the phone number 08********
+        </span>
+    </footer>
+
+    <script src="/CONNECT/APi.js"></script>
+    <script src="/JS/home.js"></script>
+</body>
+
+</html>

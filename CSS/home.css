@@ -1,0 +1,430 @@
+html,
+body {
+    margin: 0;
+    background: #020713;
+}
+
+.ocean {
+    position: relative;
+    min-height: 55000px;
+    overflow: hidden;
+
+    background: linear-gradient(to bottom,
+            #48c8e8 0%,
+            #0878ad 4%,
+            #06446f 10%,
+            #082746 16%,
+            #06172d 27%,
+            #030d1c 37%,
+            #01040c 100%);
+}
+
+.bubbles {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.bubble {
+    position: absolute;
+    bottom: -30px;
+    left: 10%;
+
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+
+    border: 1px solid rgba(210, 245, 255, 0.7);
+    background: rgba(180, 235, 255, 0.12);
+    box-shadow: inset -2px -2px 5px rgba(255, 255, 255, 0.15);
+
+    animation: rise 8s linear infinite;
+}
+
+.bubble:nth-child(2) {
+    left: 25%;
+    width: 22px;
+    height: 22px;
+    animation-delay: 2s;
+}
+
+.bubble:nth-child(3) {
+    left: 40%;
+    animation-delay: 4s;
+}
+
+.bubble:nth-child(4) {
+    left: 55%;
+    width: 10px;
+    height: 10px;
+    animation-delay: 1s;
+}
+
+.bubble:nth-child(5) {
+    left: 68%;
+    width: 25px;
+    height: 25px;
+    animation-delay: 3s;
+}
+
+.bubble:nth-child(6) {
+    left: 80%;
+    animation-delay: 5s;
+}
+
+.bubble:nth-child(7) {
+    left: 90%;
+    width: 12px;
+    height: 12px;
+    animation-delay: 2.5s;
+}
+
+.bubble:nth-child(8) {
+    left: 35%;
+    width: 18px;
+    height: 18px;
+    animation-delay: 6s;
+}
+
+@keyframes rise {
+    0% {
+        transform: translate(0, 0);
+        opacity: 0;
+    }
+
+    10% {
+        opacity: 0.8;
+    }
+
+    50% {
+        transform: translate(20px, -50vh);
+    }
+
+    100% {
+        transform: translate(-15px, -100vh);
+        opacity: 0;
+    }
+}
+
+/* Ánh sáng từ mặt biển */
+.light-rays {
+    position: absolute;
+    inset: 0 0 auto;
+    height: 900px;
+    pointer-events: none;
+
+    background:
+        radial-gradient(ellipse at 50% 0%,
+            rgba(190, 245, 255, 0.438),
+            transparent 60%),
+        repeating-conic-gradient(from -15deg at 50% 0%,
+            transparent 0deg 9deg,
+            rgba(180, 235, 255, 0.07) 10deg 12deg,
+            transparent 13deg 22deg);
+
+    /* Ánh sáng thay đổi độ sáng liên tục */
+
+    mask-image: linear-gradient(to bottom, black, transparent);
+    animation: rays 8s ease-in-out infinite alternate;
+}
+
+@keyframes rays {
+    from {
+        opacity: 0.45;
+    }
+
+    to {
+        opacity: 0.9;
+    }
+}
+
+/* Các hạt nhỏ dưới nước */
+.ocean-particles {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+
+    background-image:
+        radial-gradient(circle, #b6efff 1px, transparent 1.5px),
+        radial-gradient(circle, #6eb9db 1px, transparent 1.5px);
+
+    background-size: 83px 117px, 137px 191px;
+    background-position: 0 0, 37px 59px;
+    opacity: 0.28;
+}
+
+.depth-ruler {
+  position: fixed;
+  left: 20px;
+  top: 100px;
+  width: 155px;
+  padding: 18px 14px;
+  box-sizing: border-box;
+
+  color: #e6faff;
+  background: rgba(2, 18, 38, 0.88);
+  border: 1px solid rgba(112, 218, 250, 0.35);
+  border-radius: 16px;
+
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.25);
+  font-family: Arial, sans-serif;
+  z-index: 900;
+
+  opacity: 0;
+  visibility: hidden;
+  transform: translateX(-15px);
+
+  transition:
+    opacity 0.35s ease,
+    transform 0.35s ease,
+    visibility 0.35s ease;
+}
+
+.depth-ruler.visible {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(0);
+}
+
+.ruler-title {
+  color: #70dafa;
+  font-size: 12px;
+  font-weight: bold;
+  letter-spacing: 2px;
+  margin-bottom: 22px;
+}
+
+.ruler-track {
+  position: relative;
+  height: 300px;
+  margin-left: 5px;
+}
+
+.ruler-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 2px;
+  background: rgba(112, 218, 250, 0.5);
+}
+
+.depth-mark {
+  position: absolute;
+  left: 17px;
+  transform: translateY(-50%);
+  color: #c2e7f3;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.depth-mark::before {
+  content: "";
+  position: absolute;
+  right: calc(100% + 6px);
+  top: 50%;
+  width: 8px;
+  height: 2px;
+  background: #70dafa;
+}
+
+.submarine-pointer {
+  position: absolute;
+  top: 0;
+  left: -17px;
+  width: 40px;
+  height: 32px;
+  transform: translateY(-50%);
+  z-index: 2;
+  transition: top 0.12s linear;
+}
+
+.submarine-pointer img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.current-depth {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-top: 22px;
+  padding-top: 15px;
+  border-top: 1px solid rgba(112, 218, 250, 0.25);
+}
+
+#depth-value {
+  color: #70dafa;
+  font-size: 25px;
+  font-weight: bold;
+}
+
+.current-depth small {
+  color: #9bbdce;
+  font-size: 9px;
+  letter-spacing: 1.5px;
+}
+
+@media (max-width: 600px) {
+  .depth-ruler {
+    left: 8px;
+    top: 85px;
+    width: 125px;
+    padding: 12px 10px;
+  }
+
+  .ruler-track {
+    height: 230px;
+  }
+
+  .depth-mark {
+    left: 14px;
+    font-size: 9px;
+  }
+
+  .submarine-pointer {
+    width: 34px;
+    height: 27px;
+    left: -14px;
+  }
+
+  #depth-value {
+    font-size: 21px;
+  }
+}
+
+.depth-ruler.visible {
+  opacity: 1 !important;
+  visibility: visible !important;
+  transform: translateX(0) !important;
+  z-index: 99999;
+}
+
+/* Lớp hiển thị sinh vật biển */
+.ocean {
+    position: relative;
+}
+
+#creature-layer {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 5;
+}
+
+.ocean-creature {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    pointer-events: auto;
+    cursor: pointer;
+    animation: swimming 5s ease-in-out infinite;
+}
+
+.ocean-creature img {
+    width: var(--creature-size, 120px);
+    height: auto;
+    object-fit: contain;
+    filter: drop-shadow(0 0 10px rgba(120, 225, 255, 0.5));
+    transition: transform 0.4s;
+}
+
+.ocean-creature:hover img {
+    transform: scale(1.2);
+}
+
+.ocean-creature span {
+    color: white;
+    font-size: 13px;
+    font-weight: bold;
+    text-shadow: 0 2px 5px black;
+    white-space: nowrap;
+}
+
+@keyframes swimming {
+    0%, 100% {
+        transform: translate(0, 0);
+    }
+
+    50% {
+        transform: translate(15px, -15px);
+    }
+}
+
+/* Thông tin khi nhấn vào sinh vật */
+.creature-popup {
+    position: fixed;
+    z-index: 1000;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 300px;
+    padding: 20px;
+    color: white;
+    background: rgba(2, 25, 45, 0.95);
+    border: 1px solid #37c9ef;
+    border-radius: 15px;
+    box-shadow: 0 0 25px #00bfff55;
+}
+
+.creature-popup h3 {
+    color: #55dfff;
+}
+
+.creature-popup button {
+    background: #087fa8;
+    color: white;
+    border: 0;
+    padding: 8px 15px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.ocean {
+    position: relative;
+}
+
+#creature-layer {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 5;
+    pointer-events: none;
+}
+
+.ocean-creature {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transform: translate(-50%, -50%);
+    text-decoration: none;
+    pointer-events: auto;
+    cursor: pointer;
+}
+
+.ocean-creature img {
+    width: var(--creature-size, 220px);
+    height: var(--creature-size, 220px);
+    object-fit: contain;
+    display: block;
+}
+
+.ocean-creature span {
+    color: white;
+    font-size: 12px;
+    font-weight: bold;
+    text-align: center;
+    text-shadow: 0 2px 5px black;
+    max-width: 150px;
+    overflow-wrap: anywhere;
+}
