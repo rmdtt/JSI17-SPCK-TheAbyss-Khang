@@ -172,45 +172,37 @@ function generateCreaturePositions(zone, count) {
   const width = zone.clientWidth;
   const height = zone.clientHeight;
 
+  const imageSize = 120;
   const leftReserved = 150;
-  const imageSize = 55;
-  const padding = 10;
+  const padding = imageSize / 2 + 10;
 
-  const startX = leftReserved + imageSize / 2;
-  const endX = width - imageSize / 2;
-  const startY = imageSize / 2;
-  const endY = height - imageSize / 2;
+  const minX = leftReserved + padding;
+  const rightReserved = 100;
+  const maxX = width - rightReserved - padding;
+
+  const minY = padding;
+  const maxY = height - padding;
+
+  if (count === 0 || maxX <= minX || maxY <= minY) {
+    console.error("Không đủ diện tích:", zone.id, {
+      width,
+      height
+    });
+    return [];
+  }
 
   const positions = [];
 
-  if (endX <= startX || endY <= startY) {
-    console.error("Không đủ diện tích:", zone.id);
-    return positions;
-  }
-
-  const columns = Math.min(
-    count,
-    Math.max(1, Math.floor((endX - startX) / 100))
-  );
-
-  const rows = Math.ceil(count / columns);
+  // Chia đều khoảng cách theo chiều dọc
+  const spacingY = (maxY - minY) / count;
 
   for (let i = 0; i < count; i++) {
-    const row = Math.floor(i / columns);
-    const col = i % columns;
+    const y = minY + spacingY * (i + 0.5);
 
-    const itemsInRow = Math.min(
-      columns,
-      count - row * columns
-    );
+    // Chia vùng ngang thành các khoảng để tránh dồn về một phía
+    const x = minX + Math.random() * (maxX - minX);
 
-    const cellWidth = (endX - startX) / itemsInRow;
-    const cellHeight = (endY - startY) / rows;
-
-    positions.push({
-      x: startX + col * cellWidth + cellWidth / 2,
-      y: startY + row * cellHeight + cellHeight / 2
-    });
+    positions.push({ x, y });
   }
 
   return positions;
@@ -222,21 +214,17 @@ function generateCreaturePositions(zone, count) {
 
 async function displayCreaturesByZone() {
   for (const [zoneId, speciesList] of Object.entries(creaturesByDepth)) {
+    const zone = document.getElementById(zoneId);
+
+    if (!zone) {
+      console.warn("Không tìm thấy khu vực:", zoneId);
+      continue;
+    }
+
     try {
-      const zone = document.getElementById(zoneId);
-
-      if (!zone) {
-        console.warn("Không tìm thấy khu vực:", zoneId);
-        continue;
-      }
-
-      // Đảm bảo sinh vật được định vị trong vùng tương ứng
-      zone.style.position = "relative";
-
-      zone.querySelectorAll(".ocean-creature")
-        .forEach(element => element.remove());
-
       console.log("Đang tải:", zoneId);
+
+      zone.style.position = "relative";
 
       const images = await mapLimit(
         speciesList,
@@ -251,18 +239,28 @@ async function displayCreaturesByZone() {
         }))
         .filter(item => item.image);
 
+      // Chờ trình duyệt cập nhật kích thước vùng
+      await new Promise(resolve =>
+        requestAnimationFrame(resolve)
+      );
+
       const positions = generateCreaturePositions(
         zone,
         validSpecies.length
       );
 
+      if (positions.length !== validSpecies.length) {
+        console.error("Không tạo đủ vị trí:", zoneId);
+        continue;
+      }
+
+      // Tạo sinh vật mới trước khi thay thế sinh vật cũ
+      const fragment = document.createDocumentFragment();
+
       validSpecies.forEach((species, index) => {
         const position = positions[index];
 
-        if (!position) return;
-
         const creature = document.createElement("a");
-
         creature.className = "ocean-creature";
 
         creature.href =
@@ -272,17 +270,22 @@ async function displayCreaturesByZone() {
         creature.style.top = `${position.y}px`;
 
         const img = document.createElement("img");
-
         img.src = species.image;
         img.alt = "";
         img.loading = "lazy";
 
         creature.appendChild(img);
-        zone.appendChild(creature);
+        fragment.appendChild(creature);
       });
 
+      zone.querySelectorAll(".ocean-creature").forEach(element => {
+        element.remove();
+      });
+
+      zone.appendChild(fragment);
+
       console.log(
-        `${zoneId}: ${zone.querySelectorAll(".ocean-creature").length} sinh vật`
+        `${zoneId}: ${validSpecies.length} sinh vật`
       );
 
     } catch (error) {
@@ -368,58 +371,13 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 ["shallow", "medium", "deep", "abyssal"].forEach(id => {
-    const zone = document.getElementById(id);
+  const zone = document.getElementById(id);
 
-    console.log(id, {
-        exists: !!zone,
-        width: zone?.clientWidth,
-        height: zone?.clientHeight,
-        display: zone && getComputedStyle(zone).display,
-        position: zone && getComputedStyle(zone).position
-    });
-});
-
-// =====================================
-// KIỂM TRA CHI TIẾT 4 VÙNG
-// =====================================
-
-function checkOceanZones() {
-  const ids = ["shallow", "medium", "deep", "abyssal"];
-
-  const results = ids.map(id => {
-    const zone = document.getElementById(id);
-
-    if (!zone) {
-      return {
-        Zone: id,
-        Exists: false
-      };
-    }
-
-    const css = getComputedStyle(zone);
-    const rect = zone.getBoundingClientRect();
-
-    return {
-      Zone: id,
-      Exists: true,
-      Width: zone.clientWidth,
-      Height: zone.clientHeight,
-      Display: css.display,
-      Position: css.position,
-      Visibility: css.visibility,
-      Opacity: css.opacity,
-      ZIndex: css.zIndex,
-      Overflow: css.overflow,
-      Creatures: zone.querySelectorAll(".ocean-creature").length,
-      Top: Math.round(rect.top),
-      Left: Math.round(rect.left)
-    };
+  console.log(id, {
+    exists: !!zone,
+    width: zone?.clientWidth,
+    height: zone?.clientHeight,
+    display: zone && getComputedStyle(zone).display,
+    position: zone && getComputedStyle(zone).position
   });
-
-  console.log("===== THE ABYSS DEBUG =====");
-  console.table(results);
-}
-
-window.addEventListener("load", () => {
-  setTimeout(checkOceanZones, 1500);
 });

@@ -394,24 +394,46 @@ body {
   background: #164c79;
 }
 
-#shallow,
-#medium,
-#deep,
+#shallow {
+  position: relative;
+  width: 100%;
+  height: 400px;
+  min-height: 200px;
+}
+
+#medium {
+  position: relative;
+  width: 100%;
+  height: 2000px;
+  min-height: 400px;
+}
+
+#deep {
+  position: relative;
+  width: 100%;
+  height: 8000px;
+  min-height: 2000px;
+}
+
 #abyssal {
   position: relative;
   width: 100%;
+  height: 11000px;
+  min-height: 8000px;
 }
 
 .ocean-creature {
   position: absolute;
-  width: 55px;
-  height: 55px;
+  width: 120px;
+  height: 120px;
   transform: translate(-50%, -50%);
-  z-index: 10;
+  display: block;
+  z-index: 5;
 }
 
 .ocean-creature img {
   width: 100%;
   height: 100%;
   object-fit: contain;
+  display: block;
 }
