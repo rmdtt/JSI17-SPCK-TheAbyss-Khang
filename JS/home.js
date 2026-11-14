@@ -56,20 +56,69 @@ const creaturesByDepth = {
   ]
 };
 
+// =====================================
+// LẤY NGẪU NHIÊN SV
+// =====================================
 
-// =====================================
-// CACHE ẢNH
-// =====================================
+
+const creatureManager = {
+
+  getRandomCreatures(depth, count = 10) {
+
+    const list = creaturesByDepth[depth];
+
+    if (!list) {
+      console.warn("Độ sâu không tồn tại:", depth);
+      return [];
+    }
+
+    // Trộn ngẫu nhiên danh sách
+    const shuffled = [...list];
+
+    for (let i = shuffled.length - 1; i > 0; i--) {
+
+      const j = Math.floor(Math.random() * (i + 1));
+
+      [shuffled[i], shuffled[j]] =
+        [shuffled[j], shuffled[i]];
+
+    }
+
+    return shuffled.slice(
+      0,
+      Math.min(count, shuffled.length)
+    );
+
+  },
+
+  getRandomShallow(count = 10) {
+    return this.getRandomCreatures("shallow", count);
+  },
+
+  getRandomMedium(count = 10) {
+    return this.getRandomCreatures("medium", count);
+  },
+
+  getRandomDeep(count = 10) {
+    return this.getRandomCreatures("deep", count);
+  },
+
+  getRandomAbyssal(count = 10) {
+    return this.getRandomCreatures("abyssal", count);
+  }
+
+};
 
 const imageCache = new Map();
-
 
 // =====================================
 // TÌM ẢNH WIKIMEDIA
 // =====================================
 
 async function getCreatureImage(scientificName) {
+
   try {
+
     const params = new URLSearchParams({
       action: "query",
       generator: "search",
@@ -96,11 +145,13 @@ async function getCreatureImage(scientificName) {
     );
 
     const image = pages.find(page => {
+
       const info = page.imageinfo?.[0];
 
       return info &&
         ["image/jpeg", "image/png", "image/webp"]
           .includes(info.mime);
+
     });
 
     return image?.imageinfo?.[0]?.thumburl ||
@@ -108,193 +159,339 @@ async function getCreatureImage(scientificName) {
       null;
 
   } catch (error) {
-    console.error("Image error:", scientificName, error);
-    return null;
-  }
-}
 
+    console.error(
+      "Image error:",
+      scientificName,
+      error
+    );
+
+    return null;
+
+  }
+
+}
 
 // =====================================
 // CACHE ẢNH
 // =====================================
 
 async function getCachedCreatureImage(scientificName) {
+
   if (!imageCache.has(scientificName)) {
+
     imageCache.set(
       scientificName,
       getCreatureImage(scientificName)
     );
+
   }
 
   return imageCache.get(scientificName);
-}
 
+}
 
 // =====================================
 // GIỚI HẠN REQUEST ĐỒNG THỜI
 // =====================================
 
 async function mapLimit(items, limit, callback) {
+
   const results = new Array(items.length);
 
   let nextIndex = 0;
 
   async function worker() {
+
     while (true) {
+
       const index = nextIndex++;
 
       if (index >= items.length) return;
 
       try {
+
         results[index] = await callback(items[index]);
+
       } catch (error) {
+
         console.error(error);
+
         results[index] = null;
+
       }
+
     }
+
   }
 
   await Promise.all(
+
     Array.from(
       { length: Math.min(limit, items.length) },
       () => worker()
     )
+
   );
 
   return results;
+
 }
 
 // =====================================
 // TẠO VỊ TRÍ SINH VẬT
 // =====================================
 
-function generateCreaturePositions(zone, count) {
-  const width = zone.clientWidth;
-  const height = zone.clientHeight;
+function generateCreaturePositions(zone, count, options = {}) {
 
-  const imageSize = 120;
-  const leftReserved = 150;
-  const padding = imageSize / 2 + 10;
+    const {
+        imageSize = 120,
+        gapX = 35,
+        gapY = 35,
+        leftReserved = 150,
+        rightReserved = 100,
+        padding = 20,
 
-  const minX = leftReserved + padding;
-  const rightReserved = 100;
-  const maxX = width - rightReserved - padding;
+        // Mức độ ngẫu nhiên của vị trí
+        randomness = 0.7,
 
-  const minY = padding;
-  const maxY = height - padding;
+        // Số lần thử tìm vị trí phù hợp
+        maxAttempts = 100
+    } = options;
 
-  if (count === 0 || maxX <= minX || maxY <= minY) {
-    console.error("Không đủ diện tích:", zone.id, {
-      width,
-      height
-    });
-    return [];
-  }
+    const width = zone.clientWidth;
+    const height = zone.clientHeight;
 
-  const positions = [];
+    const minX = leftReserved + imageSize / 2 + padding;
+    const maxX = width - rightReserved - imageSize / 2 - padding;
 
-  // Chia đều khoảng cách theo chiều dọc
-  const spacingY = (maxY - minY) / count;
+    const minY = imageSize / 2 + padding;
+    const maxY = height - imageSize / 2 - padding;
 
-  for (let i = 0; i < count; i++) {
-    const y = minY + spacingY * (i + 0.5);
-
-    // Chia vùng ngang thành các khoảng để tránh dồn về một phía
-    const x = minX + Math.random() * (maxX - minX);
-
-    positions.push({ x, y });
-  }
-
-  return positions;
-}
-
-// =====================================
-// HIỂN THỊ SINH VẬT
-// =====================================
-
-async function displayCreaturesByZone() {
-  for (const [zoneId, speciesList] of Object.entries(creaturesByDepth)) {
-    const zone = document.getElementById(zoneId);
-
-    if (!zone) {
-      console.warn("Không tìm thấy khu vực:", zoneId);
-      continue;
+    if (
+        count <= 0 ||
+        maxX <= minX ||
+        maxY <= minY
+    ) {
+        return [];
     }
 
-    try {
-      console.log("Đang tải:", zoneId);
+    const positions = [];
 
-      zone.style.position = "relative";
+    // Khoảng cách tối thiểu giữa hai sinh vật
+    const minDistance = imageSize + Math.min(gapX, gapY);
 
-      const images = await mapLimit(
-        speciesList,
-        5,
-        name => getCachedCreatureImage(name)
-      );
+    // Kiểm tra vị trí có quá gần sinh vật khác không
+    function isValidPosition(x, y) {
 
-      const validSpecies = speciesList
-        .map((scientificName, index) => ({
-          scientificName,
-          image: images[index]
-        }))
-        .filter(item => item.image);
+        for (const creature of positions) {
 
-      // Chờ trình duyệt cập nhật kích thước vùng
-      await new Promise(resolve =>
-        requestAnimationFrame(resolve)
-      );
+            const dx = x - creature.x;
+            const dy = y - creature.y;
 
-      const positions = generateCreaturePositions(
-        zone,
-        validSpecies.length
-      );
+            const distance = Math.sqrt(dx * dx + dy * dy);
 
-      if (positions.length !== validSpecies.length) {
-        console.error("Không tạo đủ vị trí:", zoneId);
-        continue;
+            if (distance < minDistance) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    // Tạo vị trí ngẫu nhiên
+    for (let i = 0; i < count; i++) {
+
+        let placed = false;
+
+        for (let attempt = 0; attempt < maxAttempts; attempt++) {
+
+            const x = minX + Math.random() * (maxX - minX);
+            const y = minY + Math.random() * (maxY - minY);
+
+            if (isValidPosition(x, y)) {
+
+                positions.push({
+                    x,
+                    y,
+                    rotation: (Math.random() - 0.5) * 12,
+                    scale: 0.85 + Math.random() * 0.3
+                });
+
+                placed = true;
+                break;
+            }
+        }
+
+        // Nếu không tìm được vị trí phù hợp,
+        // bỏ qua sinh vật này để tránh chồng lấn.
+        if (!placed) {
+            console.warn(
+                "Không tìm được vị trí cho sinh vật:",
+                i,
+                zone.id
+            );
+        }
+    }
+
+    return positions;
+}
+
+
+// =====================================
+// HIỂN THỊ SINH VẬT THEO KHU VỰC
+// =====================================
+
+async function renderCreatures(depth) {
+
+  const zone = document.getElementById(depth);
+
+  if (!zone) {
+    console.warn("Không tìm thấy khu vực:", depth);
+    return;
+  }
+
+  const speciesList = creatureManager.activeCreatures?.[depth];
+
+  if (!speciesList) return;
+
+  zone.style.position = "relative";
+
+  // Tải ảnh
+  const images = await mapLimit(
+    speciesList,
+    5,
+    name => getCachedCreatureImage(name)
+  );
+
+  // Lọc sinh vật có ảnh
+  const validSpecies = speciesList
+    .map((scientificName, index) => ({
+      scientificName,
+      image: images[index]
+    }))
+    .filter(item => item.image);
+
+  // Tính vị trí
+  const positions = generateCreaturePositions(
+    zone,
+    validSpecies.length
+  );
+
+  if (positions.length !== validSpecies.length) {
+    console.warn("Không đủ vị trí:", depth);
+    return;
+  }
+
+  // Lưu các phần tử hiện tại để tái sử dụng
+  const existingCreatures = new Map();
+
+  zone.querySelectorAll(".ocean-creature").forEach(
+    creature => {
+
+      const name = creature.dataset.species;
+
+      if (name) {
+        existingCreatures.set(name, creature);
       }
 
-      // Tạo sinh vật mới trước khi thay thế sinh vật cũ
-      const fragment = document.createDocumentFragment();
-
-      validSpecies.forEach((species, index) => {
-        const position = positions[index];
-
-        const creature = document.createElement("a");
-        creature.className = "ocean-creature";
-
-        creature.href =
-          `ifm.html?species=${encodeURIComponent(species.scientificName)}`;
-
-        creature.style.left = `${position.x}px`;
-        creature.style.top = `${position.y}px`;
-
-        const img = document.createElement("img");
-        img.src = species.image;
-        img.alt = "";
-        img.loading = "lazy";
-
-        creature.appendChild(img);
-        fragment.appendChild(creature);
-      });
-
-      zone.querySelectorAll(".ocean-creature").forEach(element => {
-        element.remove();
-      });
-
-      zone.appendChild(fragment);
-
-      console.log(
-        `${zoneId}: ${validSpecies.length} sinh vật`
-      );
-
-    } catch (error) {
-      console.error(`Lỗi ở vùng ${zoneId}:`, error);
     }
-  }
+  );
 
-  console.log("The Abyss is ready!");
+  const fragment = document.createDocumentFragment();
+
+  validSpecies.forEach((species, index) => {
+
+    const position = positions[index];
+
+    let creature = existingCreatures.get(
+      species.scientificName
+    );
+
+    // Tạo mới nếu chưa có
+    if (!creature) {
+
+      creature = document.createElement("a");
+
+      creature.className = "ocean-creature";
+
+      creature.dataset.species =
+        species.scientificName;
+
+      const img = document.createElement("img");
+
+      img.alt = species.scientificName;
+
+      img.loading = "lazy";
+
+      creature.appendChild(img);
+
+    }
+
+    // Cập nhật liên kết
+    creature.href =
+      `ifm.html?species=${encodeURIComponent(
+        species.scientificName
+      )}`;
+
+    // Cập nhật vị trí
+    creature.style.left = `${position.x}px`;
+    creature.style.top = `${position.y}px`;
+
+    creature.style.transform =
+      "translate(-50%, -50%)";
+
+    // Cập nhật ảnh
+    creature.querySelector("img").src = species.image;
+
+    fragment.appendChild(creature);
+
+  });
+
+  // Thay thế các phần tử cũ
+  zone.querySelectorAll(".ocean-creature").forEach(
+    element => element.remove()
+  );
+
+  zone.appendChild(fragment);
+
+  console.log(
+    `${depth}: ${validSpecies.length} sinh vật`
+  );
+
 }
+
+// =====================================
+// HIỂN THỊ TẤT CẢ KHU VỰC
+// =====================================
+
+async function renderAllCreatures() {
+
+  const depths = [
+    "shallow",
+    "medium",
+    "deep",
+    "abyssal"
+  ];
+
+  await Promise.all(
+    depths.map(depth => renderCreatures(depth))
+  );
+
+}
+
+
+
+// =====================================
+// QUẢN LÝ DANH SÁCH ĐANG HIỂN THỊ
+// =====================================
+
+creatureManager.activeCreatures = {
+  shallow: [],
+  medium: [],
+  deep: [],
+  abyssal: []
+};
 
 // =====================================
 // KHỞI CHẠY
@@ -302,14 +499,25 @@ async function displayCreaturesByZone() {
 
 document.addEventListener("DOMContentLoaded", async () => {
 
-  try {
-    console.log("Exploring The Abyss...");
+  console.log("Exploring The Abyss...");
 
-    await displayCreaturesByZone();
+  // Chọn sinh vật ngẫu nhiên
+  creatureManager.activeCreatures.shallow =
+    creatureManager.getRandomShallow(10);
 
-  } catch (error) {
-    console.error("Cannot load creatures:", error);
-  }
+  creatureManager.activeCreatures.medium =
+    creatureManager.getRandomMedium(10);
+
+  creatureManager.activeCreatures.deep =
+    creatureManager.getRandomDeep(10);
+
+  creatureManager.activeCreatures.abyssal =
+    creatureManager.getRandomAbyssal(10);
+
+  // Hiển thị
+  await renderAllCreatures();
+
+  console.log("The Abyss is ready!");
 
 });
 

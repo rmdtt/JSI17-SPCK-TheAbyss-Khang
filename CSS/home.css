@@ -329,7 +329,7 @@ body {
 }
 
 .ocean-creature img {
-    width: var(--creature-size, 120px);
+    width: var(--creature-size, 250px);
     height: auto;
     object-fit: contain;
     filter: drop-shadow(0 0 10px rgba(120, 225, 255, 0.5));
@@ -422,18 +422,31 @@ body {
   min-height: 8000px;
 }
 
+
 .ocean-creature {
   position: absolute;
+
   width: 120px;
   height: 120px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
   transform: translate(-50%, -50%);
-  display: block;
-  z-index: 5;
+
+  transition:
+    left 0.5s ease,
+    top 0.5s ease;
+
+  z-index: 10;
 }
 
 .ocean-creature img {
   width: 100%;
   height: 100%;
+
   object-fit: contain;
-  display: block;
+
+  pointer-events: none;
 }
