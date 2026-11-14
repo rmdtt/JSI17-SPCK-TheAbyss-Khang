@@ -1,227 +1,486 @@
+
 const COMMONS_API = "https://commons.wikimedia.org/w/api.php";
 
-
-const CREATURE_API = {
-    obis: "https://api.obis.org/v3",
-    fishbase: "https://fishbase.ropensci.org",
-    sealifebase: "https://fishbase.ropensci.org/sealifebase",
-    worms: "https://www.marinespecies.org/rest"
+const API = {
+  worms: "https://www.marinespecies.org/rest",
+  obis: "https://api.obis.org/v3",
+  gbif: "https://api.gbif.org/v1",
+  mobs: "https://raw.githubusercontent.com/crmcclain/MOBS_OPEN/main/data_all_112224.csv",
+  temperature: "https://marine-api.open-meteo.com/v1/marine"
 };
 
-// Gọi API và kiểm tra lỗi
+const cache = new Map();
+let mobsPromise = null;
+
+
+// ========================================
+// 1. HÀM GỌI API
+// ========================================
+
 async function fetchJSON(url) {
-    const response = await fetch(url);
+  const response = await fetch(url);
 
-    if (!response.ok) {
-        throw new Error(`API Error: ${response.status}`);
-    }
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}: ${url}`);
+  }
 
-    return response.json();
+  return response.json();
 }
 
-// Phân loại kích thước
-function classifySize(lengthCm) {
-    if (lengthCm == null || !Number.isFinite(lengthCm)) {
-        return "unknown";
-    }
 
-    if (lengthCm < 30) return "small";
-    if (lengthCm < 100) return "medium";
+// ========================================
+// 2. WORMS - TÊN KHOA HỌC VÀ APHIA ID
+// ========================================
 
-    return "large";
+async function getWoRMSInfo(scientificName) {
+  const url =
+    `${API.worms}/AphiaRecordsByName/` +
+    `${encodeURIComponent(scientificName)}?marine_only=true`;
+
+  const records = await fetchJSON(url);
+
+  if (!Array.isArray(records) || records.length === 0) {
+    return null;
+  }
+
+  const record = records.find(item =>
+    item.status?.toLowerCase() === "accepted"
+  ) || records[0];
+
+  return {
+    aphiaID: record.AphiaID,
+    scientificName: record.scientificname,
+    acceptedName: record.valid_name || record.scientificname
+  };
 }
 
-// Phân loại nhiệt độ
-function classifyTemperature(temperatures) {
-    const valid = temperatures.filter(
-        value => Number.isFinite(value)
+
+// ========================================
+// 3. OBIS - ĐỘ SÂU VÀ TỌA ĐỘ GHI NHẬN
+// ========================================
+
+async function getOBISInfo(aphiaID) {
+  if (!aphiaID) return null;
+
+  const url = new URL(`${API.obis}/occurrence`);
+
+  url.searchParams.set("taxonid", aphiaID);
+  url.searchParams.set("size", "1000");
+
+  const result = await fetchJSON(url);
+  const records = result.results || [];
+
+  // Lấy độ sâu hợp lệ
+  const depths = records
+    .map(item => item.depth)
+    .filter(value =>
+      value !== null &&
+      value !== undefined &&
+      value !== ""
+    )
+    .map(Number)
+    .filter(value =>
+      Number.isFinite(value) && value >= 0
     );
 
-    if (!valid.length) return "unknown";
+  // Lấy tọa độ hợp lệ
+  const locations = records
+    .filter(item =>
+      item.decimalLatitude != null &&
+      item.decimalLongitude != null &&
+      Number.isFinite(Number(item.decimalLatitude)) &&
+      Number.isFinite(Number(item.decimalLongitude)) &&
+      Number(item.decimalLatitude) >= -90 &&
+      Number(item.decimalLatitude) <= 90 &&
+      Number(item.decimalLongitude) >= -180 &&
+      Number(item.decimalLongitude) <= 180
+    )
+    .map(item => ({
+      latitude: Number(item.decimalLatitude),
+      longitude: Number(item.decimalLongitude)
+    }));
 
-    const average =
-        valid.reduce((sum, value) => sum + value, 0) /
-        valid.length;
+  return {
+    totalRecords: result.total ?? records.length,
 
-    if (average < 10) return "cold";
-    if (average >= 20) return "warm";
+    minDepth: depths.length
+      ? Math.min(...depths)
+      : null,
 
-    return "temperate";
+    maxDepth: depths.length
+      ? Math.max(...depths)
+      : null,
+
+    locations
+  };
 }
 
-// 1. Lấy thông tin từ FishBase hoặc SeaLifeBase
-async function getDatabaseInfo(scientificName, database = "fishbase") {
-    const parts = scientificName.trim().split(/\s+/);
+// ========================================
+// 4. PHÂN LOẠI NƯỚC LẠNH / NƯỚC ẤM
+// ========================================
 
-    if (parts.length < 2) return null;
+async function getWaterTemperature(latitude, longitude) {
+  const url = new URL(API.temperature);
 
-    const [genus, species] = parts;
+  url.searchParams.set("latitude", latitude);
+  url.searchParams.set("longitude", longitude);
+  url.searchParams.set("hourly", "sea_surface_temperature");
+  url.searchParams.set("forecast_days", "1");
 
-    const baseURL =
-        database === "sealifebase"
-            ? CREATURE_API.sealifebase
-            : CREATURE_API.fishbase;
+  const result = await fetchJSON(url);
 
-    const url = new URL(`${baseURL}/species`);
+  const temperatures =
+    result.hourly?.sea_surface_temperature || [];
 
-    url.searchParams.set("genus", genus);
-    url.searchParams.set("species", species);
-    url.searchParams.set("limit", "10");
+  const validTemperatures = temperatures
+    .map(Number)
+    .filter(value => Number.isFinite(value));
 
-    const result = await fetchJSON(url);
+  if (!validTemperatures.length) {
+    return null;
+  }
 
-    return result.data?.find(item =>
-        item.sciname?.toLowerCase() === scientificName.toLowerCase()
-    ) || result.data?.[0] || null;
+  return validTemperatures.reduce(
+    (sum, value) => sum + value, 0
+  ) / validTemperatures.length;
 }
 
-// 2. Lấy dữ liệu quan sát từ OBIS
-async function getOBISInfo(scientificName) {
-    const url = new URL(`${CREATURE_API.obis}/occurrence`);
+function classifyWaterType(temperature) {
+  if (temperature == null) {
+    return "Unknown";
+  }
 
-    url.searchParams.set("scientificname", scientificName);
-    url.searchParams.set("size", "100");
+  return temperature < 15
+    ? "Cold Water"
+    : "Warm Water";
+}
 
-    const result = await fetchJSON(url);
+// ========================================
+// 5. GBIF - QUỐC GIA GHI NHẬN
+// ========================================
 
-    const records = result.results || [];
+async function getGBIFInfo(scientificName) {
+  const url = new URL(
+    `${API.gbif}/occurrence/search`
+  );
 
-    const depths = [];
-    const temperatures = [];
+  url.searchParams.set("scientificName", scientificName);
+  url.searchParams.set("limit", "100");
 
-    for (const record of records) {
-        const minDepth = Number(record.minimumDepthInMeters);
-        const maxDepth = Number(record.maximumDepthInMeters);
-        const temperature = Number(record.sst);
+  const result = await fetchJSON(url);
+  const records = result.results || [];
 
-        if (Number.isFinite(minDepth)) depths.push(minDepth);
-        if (Number.isFinite(maxDepth)) depths.push(maxDepth);
+  return {
+    totalRecords: result.count ?? 0,
 
-        if (Number.isFinite(temperature)) {
-            temperatures.push(temperature);
-        }
+    countries: [
+      ...new Set(
+        records
+          .map(item => item.country)
+          .filter(Boolean)
+      )
+    ]
+  };
+}
+
+
+// ========================================
+// 6. MOBS - KÍCH THƯỚC CƠ THỂ
+// ========================================
+
+// Tải CSV một lần để tái sử dụng
+
+async function loadMOBS() {
+  if (!mobsPromise) {
+    mobsPromise = (async () => {
+
+      if (!window.Papa) {
+        throw new Error(
+          "PapaParse has not been loaded"
+        );
+      }
+
+      const response = await fetch(API.mobs);
+
+      if (!response.ok) {
+        throw new Error(
+          `Cannot load MOBS CSV: ${response.status}`
+        );
+      }
+
+      const csv = await response.text();
+
+      const parsed = Papa.parse(csv, {
+        header: true,
+        skipEmptyLines: true,
+        dynamicTyping: false
+      });
+
+      if (parsed.errors.length) {
+        console.warn(
+          "MOBS CSV parsing warnings:",
+          parsed.errors
+        );
+      }
+
+      return parsed.data;
+
+    })().catch(error => {
+      mobsPromise = null;
+      throw error;
+    });
+  }
+
+  return mobsPromise;
+}
+
+
+// Lấy thông tin kích thước theo tên khoa học
+
+async function getMOBSInfo(scientificName) {
+  const rows = await loadMOBS();
+
+  const matches = rows.filter(row =>
+    row.scientificName?.trim().toLowerCase() ===
+    scientificName.trim().toLowerCase()
+  );
+
+  if (!matches.length) {
+    return null;
+  }
+
+  // Lấy các giá trị chiều dài hợp lệ
+  const lengths = matches
+    .map(row => Number(row.length_cm))
+    .filter(value =>
+      Number.isFinite(value) && value > 0
+    )
+    .sort((a, b) => a - b);
+
+  // Tính trung vị chính xác
+  let median = null;
+
+  if (lengths.length) {
+    const middle = Math.floor(lengths.length / 2);
+
+    median = lengths.length % 2 === 0
+      ? (lengths[middle - 1] + lengths[middle]) / 2
+      : lengths[middle];
+  }
+
+  const widths = matches
+    .map(row => Number(row.diameter_width_cm))
+    .filter(value =>
+      Number.isFinite(value) && value > 0
+    );
+
+  const heights = matches
+    .map(row => Number(row.height_cm))
+    .filter(value =>
+      Number.isFinite(value) && value > 0
+    );
+
+  return {
+    measurements: matches,
+
+    lengthCm: median,
+
+    widthCm: widths.length
+      ? widths[0]
+      : null,
+
+    heightCm: heights.length
+      ? heights[0]
+      : null,
+
+    references: [
+      ...new Set(
+        matches
+          .map(row => row.Size_Ref)
+          .filter(Boolean)
+      )
+    ]
+  };
+}
+
+
+// ========================================
+// 7. PHÂN LOẠI KÍCH THƯỚC
+// ========================================
+
+function classifySize(lengthCm) {
+  if (
+    lengthCm == null ||
+    !Number.isFinite(lengthCm)
+  ) {
+    return "unknown";
+  }
+
+  if (lengthCm < 30) {
+    return "small";
+  }
+
+  if (lengthCm < 100) {
+    return "medium";
+  }
+
+  return "large";
+}
+
+
+// ========================================
+// 8. TỔNG HỢP DỮ LIỆU SINH VẬT
+// ========================================
+
+async function getCreatureInfo(scientificName) {
+
+  const cacheKey = scientificName.trim().toLowerCase();
+
+  if (cache.has(cacheKey)) {
+    return cache.get(cacheKey);
+  }
+
+  // Lấy thông tin từ WoRMS
+  const worms = await getWoRMSInfo(scientificName);
+
+  if (!worms) {
+    throw new Error(
+      `Species not found in WoRMS: ${scientificName}`
+    );
+  }
+
+  // Gọi các nguồn dữ liệu song song
+  const [obis, gbif, mobs] = await Promise.allSettled([
+    getOBISInfo(worms.aphiaID),
+    getGBIFInfo(worms.scientificName),
+    getMOBSInfo(worms.scientificName)
+  ]);
+
+  const obisData =
+    obis.status === "fulfilled"
+      ? obis.value
+      : null;
+
+  const gbifData =
+    gbif.status === "fulfilled"
+      ? gbif.value
+      : null;
+
+  const mobsData =
+    mobs.status === "fulfilled"
+      ? mobs.value
+      : null;
+
+  // Báo lỗi nếu một nguồn dữ liệu không hoạt động
+  if (obis.status === "rejected") {
+    console.warn("OBIS error:", obis.reason);
+  }
+
+  if (gbif.status === "rejected") {
+    console.warn("GBIF error:", gbif.reason);
+  }
+
+  if (mobs.status === "rejected") {
+    console.warn("MOBS error:", mobs.reason);
+  }
+
+  const length = mobsData?.lengthCm ?? null;
+
+  const locations = obisData?.locations || [];
+
+  let averageTemperature = null;
+
+  if (locations.length > 0) {
+    const sampleLocations = locations.slice(0, 5);
+
+    const temperatureResults = await Promise.allSettled(
+      sampleLocations.map(point =>
+        getWaterTemperature(
+          point.latitude,
+          point.longitude
+        )
+      )
+    );
+
+    const validTemperatures = temperatureResults
+      .filter(result =>
+        result.status === "fulfilled" &&
+        result.value !== null
+      )
+      .map(result => result.value);
+
+    if (validTemperatures.length > 0) {
+      averageTemperature =
+        validTemperatures.reduce(
+          (sum, value) => sum + value, 0
+        ) / validTemperatures.length;
     }
+  }
 
-    return {
-        totalRecords: result.total || records.length,
+  // Object dữ liệu cuối cùng
+  const data = {
 
-        observedDepth: depths.length
-            ? {
-                min: Math.min(...depths),
-                max: Math.max(...depths)
-            }
-            : null,
+    // Định danh
+    scientificName: worms.scientificName,
+    acceptedName: worms.acceptedName,
+    aphiaID: worms.aphiaID,
 
-        temperature: classifyTemperature(temperatures),
+    // Kích thước
+    size: {
+      category: classifySize(length),
+      valueCm: length
+    },
 
-        averageSST: temperatures.length
-            ? temperatures.reduce((a, b) => a + b, 0) /
-              temperatures.length
-            : null
-    };
+    // Độ sâu ghi nhận
+    depth: obisData &&
+      (
+        obisData.minDepth !== null ||
+        obisData.maxDepth !== null
+      )
+      ? {
+        min: obisData.minDepth,
+        max: obisData.maxDepth
+      }
+      : null,
+
+    // Nhiệt độ nước biển ghi nhận
+    waterTemperature: averageTemperature,
+
+    waterType: classifyWaterType(
+      averageTemperature
+    ),
+
+    // Quốc gia ghi nhận
+    distribution: gbifData?.countries || [],
+
+    // Số lượng bản ghi
+    observationCount: {
+      obis: obisData?.totalRecords ?? 0,
+      gbif: gbifData?.totalRecords ?? 0
+    },
+
+    // Dữ liệu kích thước chi tiết
+    measurements: mobsData?.measurements || [],
+
+    // Tài liệu tham khảo kích thước
+    sizeReferences: mobsData?.references || [],
+
+    // Số tọa độ OBIS đã lấy
+    locationCount: obisData?.locations?.length ?? 0
+  };
+
+  cache.set(cacheKey, data);
+
+  return data;
 }
 
-// 3. Xác minh tên khoa học bằng WoRMS
-async function getWoRMSInfo(scientificName) {
-    const url =
-        `${CREATURE_API.worms}/AphiaRecordsByName/` +
-        encodeURIComponent(scientificName) +
-        "?marine_only=true";
 
-    const result = await fetchJSON(url);
+// ========================================
+// 9. WIKIMEDIA COMMONS - TÌM ẢNH
+// ========================================
 
-    if (!Array.isArray(result) || !result.length) {
-        return null;
-    }
-
-    return result.find(item => item.status === "accepted") ||
-           result[0];
-}
-
-// 4. Hàm tổng hợp thông tin của một sinh vật
-async function getCreatureInfo(
-    scientificName,
-    database = "fishbase"
-) {
-    const [databaseResult, obisResult, wormsResult] =
-        await Promise.allSettled([
-            getDatabaseInfo(scientificName, database),
-            getOBISInfo(scientificName),
-            getWoRMSInfo(scientificName)
-        ]);
-
-    const biologicalData =
-        databaseResult.status === "fulfilled"
-            ? databaseResult.value
-            : null;
-
-    const observationData =
-        obisResult.status === "fulfilled"
-            ? obisResult.value
-            : null;
-
-    const taxonData =
-        wormsResult.status === "fulfilled"
-            ? wormsResult.value
-            : null;
-
-    const length = Number(biologicalData?.Length);
-
-    const fishDepthMin = biologicalData?.DepthRangeShallow;
-    const fishDepthMax = biologicalData?.DepthRangeDeep;
-
-    const hasFishDepth =
-        Number.isFinite(Number(fishDepthMin)) &&
-        Number.isFinite(Number(fishDepthMax));
-
-    const depth = hasFishDepth
-        ? {
-            min: Number(fishDepthMin),
-            max: Number(fishDepthMax),
-            source: database
-        }
-        : observationData?.observedDepth
-            ? {
-                ...observationData.observedDepth,
-                source: "OBIS observations"
-            }
-            : null;
-
-    return {
-        scientificName,
-
-        acceptedName:
-            taxonData?.valid_name || taxonData?.scientificname ||
-            scientificName,
-
-        aphiaID: taxonData?.AphiaID || null,
-
-        size: {
-            valueCm: Number.isFinite(length) ? length : null,
-            category: classifySize(length)
-        },
-
-        depth,
-
-        temperaturePreference:
-            observationData?.temperature || "unknown",
-
-        averageSST:
-            observationData?.averageSST ?? null,
-
-        observationCount:
-            observationData?.totalRecords ?? 0,
-
-        sources: {
-            biologicalDatabase: biologicalData ? database : null,
-            obis: observationData !== null,
-            worms: taxonData !== null
-        }
-    };
-}
-
-// 2. Gọi Wikimedia Commons: tìm ảnh PNG/WebP nền trong suốt
 async function getFishImages(fishName) {
+
   const params = new URLSearchParams({
     action: "query",
     generator: "search",
@@ -240,34 +499,56 @@ async function getFishImages(fishName) {
   );
 
   if (!response.ok) {
-    throw new Error(`Wikimedia API error: ${response.status}`);
+    throw new Error(
+      `Wikimedia API error: ${response.status}`
+    );
   }
 
-  const data = await response.json();
-  const pages = Object.values(data.query?.pages || {});
+  const result = await response.json();
+
+  const pages = Object.values(
+    result.query?.pages || {}
+  );
 
   return pages
-    .map((page) => {
-      const info = page.imageinfo?.[0];
-      if (!info) return null;
+    .map(page => {
 
-      const mime = info.mime || "";
+      const info = page.imageinfo?.[0];
+
+      if (!info) {
+        return null;
+      }
+
       const metadata = info.extmetadata || {};
 
       return {
         name: page.title,
+
         imageUrl: info.thumburl || info.url,
+
         originalUrl: info.url,
-        mimeType: mime,
+
+        mimeType: info.mime || "",
+
         sourceUrl: info.descriptionurl,
-        author: metadata.Artist?.value || "Unknown",
-        license: metadata.LicenseShortName?.value || "Check license",
-        licenseUrl: metadata.LicenseUrl?.value || ""
+
+        author:
+          metadata.Artist?.value || "Unknown",
+
+        license:
+          metadata.LicenseShortName?.value ||
+          "Check license",
+
+        licenseUrl:
+          metadata.LicenseUrl?.value || ""
       };
     })
-    .filter((image) =>
+    .filter(image =>
       image &&
       image.imageUrl &&
-      ["image/png", "image/webp"].includes(image.mimeType)
+      [
+        "image/png",
+        "image/webp"
+      ].includes(image.mimeType)
     );
 }

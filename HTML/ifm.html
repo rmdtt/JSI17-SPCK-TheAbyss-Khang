@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="/CSS/nav.css">
     <link rel="stylesheet" href="/CSS/ct&footer.css">
+    <link rel="stylesheet" href="/CSS/ifm.css">
     <title>Information</title>
 </head>
 
@@ -29,9 +30,84 @@
         </ul>
     </nav>
 
-    <div id="creature-info">
-        <p>Loading creature information...</p>
-    </div>
+    <main class="creature-page">
+
+        <!-- PHẦN GIỚI THIỆU -->
+        <section class="creature-hero">
+
+            <div class="creature-image">
+                <img id="creature-image" src="" alt="Marine creature">
+
+                <div id="image-loading">
+                    Loading image...
+                </div>
+            </div>
+
+            <div class="creature-description">
+
+                <span class="category">
+                    MARINE SPECIES
+                </span>
+
+                <h1 id="creature-name">
+                    Loading...
+                </h1>
+
+                <p class="scientific-name" id="scientific-name">
+                </p>
+
+                <p id="creature-description">
+                    Loading creature description...
+                </p>
+
+            </div>
+
+        </section>
+
+        <!-- PHẦN THÔNG TIN -->
+        <section class="information-section">
+
+            <h2>Biological Information</h2>
+
+            <div class="information-grid">
+
+                <div class="info-card">
+                    <span>SIZE</span>
+                    <h3 id="creature-size">Unknown</h3>
+                </div>
+
+                <div class="info-card">
+                    <span>DEPTH RANGE</span>
+                    <h3 id="creature-depth">Unknown</h3>
+                </div>
+
+                <div class="info-card">
+                    <span>WATER TYPE</span>
+                    <h3 id="creature-water-type">Unknown</h3>
+                </div>
+
+                <div class="info-card">
+                    <span>HABITAT</span>
+                    <h3 id="creature-habitat">Marine</h3>
+                </div>
+
+                <div class="info-card">
+                    <span>SCIENTIFIC NAME</span>
+                    <h3 id="creature-scientific">Unknown</h3>
+                </div>
+
+                <div class="info-card">
+                    <span>APHIA ID</span>
+                    <h3 id="creature-aphia">Unknown</h3>
+                </div>
+
+            </div>
+
+        </section>
+
+        <p id="error-message"></p>
+
+    </main>
 
     <footer>
         <span>
@@ -42,7 +118,9 @@
         </span>
     </footer>
 
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
     <script src="/CONNECT/APi.js"></script>
+    <script src="/JS/ifm.js"></script>
 </body>
 
 </html>
