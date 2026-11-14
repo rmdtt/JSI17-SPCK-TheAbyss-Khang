@@ -506,49 +506,36 @@ async function getFishImages(fishName) {
 
   const result = await response.json();
 
+  console.log("Wikimedia response:", result);
+
   const pages = Object.values(
     result.query?.pages || {}
   );
 
+  console.log("Found image pages:", pages.length);
+
   return pages
     .map(page => {
-
       const info = page.imageinfo?.[0];
 
-      if (!info) {
-        return null;
-      }
+      if (!info) return null;
 
       const metadata = info.extmetadata || {};
 
       return {
         name: page.title,
-
         imageUrl: info.thumburl || info.url,
-
         originalUrl: info.url,
-
         mimeType: info.mime || "",
-
         sourceUrl: info.descriptionurl,
-
-        author:
-          metadata.Artist?.value || "Unknown",
-
-        license:
-          metadata.LicenseShortName?.value ||
-          "Check license",
-
-        licenseUrl:
-          metadata.LicenseUrl?.value || ""
+        author: metadata.Artist?.value || "Unknown",
+        license: metadata.LicenseShortName?.value || "Check license",
+        licenseUrl: metadata.LicenseUrl?.value || ""
       };
     })
     .filter(image =>
       image &&
       image.imageUrl &&
-      [
-        "image/png",
-        "image/webp"
-      ].includes(image.mimeType)
+      image.mimeType.toLowerCase().startsWith("image/")
     );
 }

@@ -25,6 +25,7 @@ async function loadCreaturePage() {
 
     try {
         const data = await getCreatureInfo(scientificName);
+        loadCreatureImage(data.scientificName);
 
         setText("creature-name", data.acceptedName);
         setText("scientific-name", data.scientificName);
@@ -73,8 +74,10 @@ async function loadCreaturePage() {
             "Unable to retrieve biological information."
         );
 
-        document.getElementById("error-message").textContent =
-            "Some information could not be loaded.";
+        setText(
+            "creature-description",
+            "Some information could not be loaded."
+        );
     }
 }
 
@@ -126,6 +129,11 @@ async function loadCreatureImage(scientificName) {
     const image = document.getElementById("creature-image");
     const loading = document.getElementById("image-loading");
 
+    if (!image || !loading) {
+        console.error("Không tìm thấy creature-image hoặc image-loading");
+        return;
+    }
+
     image.style.display = "none";
     loading.textContent = "Loading image...";
 
@@ -154,13 +162,3 @@ async function loadCreatureImage(scientificName) {
         loading.textContent = "Unable to load image";
     }
 }
-
-getCreatureInfo("Mola mola").then(data => {
-    console.log("Tên khoa học:", data.scientificName);
-    console.log("Aphia ID:", data.aphiaID);
-    console.log("Kích thước:", data.size);
-    console.log("Độ sâu:", data.depth);
-    console.log("Vùng biển:", data.habitatRegions);
-    console.log("Quốc gia:", data.distribution);
-    console.log("Số tọa độ:", data.locationCount);
-}).catch(console.error);
