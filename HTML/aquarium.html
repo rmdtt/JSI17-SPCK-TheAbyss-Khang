@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        #content {
+            text-align: center;
+            margin: 20px auto 120px;
+            color: #c4dce8;
+            font-size: 24px;
+            font-weight: normal;
+        }
+
+        #name {
+            text-align: center;
+            margin-top: 100px;
+            color: #36d9ff;
+            font-size: 60px;
+            letter-spacing: 5px;
+            text-shadow: 0 0 15px rgba(54, 217, 255, 0.4);
+        }
+    </style>
+    <link rel="stylesheet" href="/CSS/nav.css">
+    <link rel="stylesheet" href="/CSS/ct&footer.css">
+    <link rel="stylesheet" href="/CSS/aquarium.css">
+    <title>The Aquarium</title>
+</head>
+
+<body>
+    <nav class="navbar">
+        <a href="home.html" class="logo">The <span>Abyss</span></a>
+
+        <form class="search-form" action="#" method="get">
+            <input type="search" name="creature" placeholder="Creature's name or depth..."
+                aria-label="Search for a sea creature or depth">
+            <button type="submit">Search</button>
+        </form>
+
+        <ul class="nav-links">
+            <li>
+                <a href="aquarium.html">Your Aquarium</a>
+            </li>
+            <li>
+                <a href="addCre.html" class="add-btn">Add Creature</a>
+            </li>
+        </ul>
+    </nav>
+
+    <main class="room">
+        <div class="wall"></div>
+        <div class="floor"></div>
+        <div class="window-glow"></div>
+        <div class="ac" aria-label="Air conditioner"></div>
+        <div class="lamp"><span class="lamp-glow"></span></div>
+
+        <section class="aquarium" id="aquarium" aria-label="Aquarium">
+            <div class="water-light"></div>
+            <div class="surface"></div>
+            <div class="fish" id="fish" aria-label="Your virtual creature">
+                🐠
+            </div>
+            <div class="fish-shadow"></div>
+            <img src="/IMG/coral1.png" class="decoration coral-large" alt="">
+            <img src="/IMG/coral2.png" class="decoration coral-medium" alt="">
+            <div class="rock rock-left"></div>
+            <div class="rock rock-right"></div>
+            <div class="sand"></div>
+            <div class="bubble-layer" id="bubble-layer"></div>
+            <div class="glass-reflection"></div>
+        </section>
+
+        <div class="table"></div>
+        <div class="room-light"></div>
+
+        <header class="brand">
+            <div class="brand-name">THE ABYSS</div>
+            <div class="brand-subtitle">AQUARIUM ROOM</div>
+        </header>
+
+        <section class="game-hud">
+            <div class="hud-label">SIMULATION</div>
+            <div class="hud-time" id="game-clock">Day 1 · 08:00</div>
+            <div class="hud-sub" id="day-phase">DAYLIGHT</div>
+            <div class="hud-label status-label">STATUS</div>
+            <div class="status-online"><span class="status-dot"></span> ONLINE</div>
+        </section>
+
+        <section class="creature-card">
+            <div class="creature-title">
+                <div>
+                    <div class="eyebrow">YOUR CREATURE</div>
+                    <h2 id="creature-name">Luma</h2>
+                    <div class="species">Virtual marine creature</div>
+                </div>
+                <div class="mood-icon" id="mood-icon">☺</div>
+            </div>
+            <div class="mood-line">
+                <span id="mood-text">Content</span>
+                <span id="mood-value">72%</span>
+            </div>
+            <div class="meter">
+                <div class="meter-fill mood-fill" id="mood-meter"></div>
+            </div>
+            <div class="stats">
+                <div class="stat"><span>HEALTH</span><strong id="health-value">100%</strong>
+                    <div class="meter">
+                        <div class="meter-fill" id="health-meter"></div>
+                    </div>
+                </div>
+                <div class="stat"><span>HUNGER</span><strong id="hunger-value">20%</strong>
+                    <div class="meter">
+                        <div class="meter-fill hunger-fill" id="hunger-meter"></div>
+                    </div>
+                </div>
+                <div class="stat"><span>WATER CLEANLINESS</span><strong id="clean-value">100%</strong>
+                    <div class="meter">
+                        <div class="meter-fill clean-fill" id="clean-meter"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="notice" id="notice">Everything looks calm.</div>
+        </section>
+
+        <section class="control-panel">
+            <div class="panel-heading">
+                <div>
+                    <div class="eyebrow">CARE & ENVIRONMENT</div>
+                    <h2>Controls</h2>
+                    <a href="instructions.html" class="help-btn" title="How to play">?</a>
+                </div>
+                <button class="icon-button" id="pause-button" title="Pause simulation">Ⅱ</button>
+            </div>
+            <div class="temperature-control">
+                <div class="control-row">
+                    <span>WATER TEMPERATURE</span>
+                    <strong id="temperature-value">24.0°C</strong>
+                </div>
+                <div class="temp-buttons">
+                    <button class="small-button" id="temp-down">−</button>
+                    <div class="temp-track">
+                        <div id="temp-indicator"></div>
+                    </div>
+                    <button class="small-button" id="temp-up">+</button>
+                </div>
+                <div class="control-hint" id="temp-hint">Day/night variation is simulated.</div>
+            </div>
+            <div class="action-grid">
+                <button class="action-button" id="feed-button"><span>♧</span><strong>Feed</strong><small>Favorite
+                        food</small></button>
+                <button class="action-button" id="clean-button"><span>✧</span><strong>Clean tank</strong><small>Remove
+                        debris</small></button>
+                <button class="action-button" id="toy-button"><span>◉</span><strong id="toy-label">Toy:
+                        Off</strong><small>Enrichment</small></button>
+                <button class="action-button" id="light-button"><span>☼</span><strong id="light-label">Light:
+                        On</strong><small>Lighting cycle</small></button>
+            </div>
+            <div class="panel-footer">
+                <button class="text-button" id="save-button">Save</button>
+                <button class="text-button" id="reset-button">New game</button>
+                <label class="speed-control">Speed
+                    <select id="speed-select">
+                        <option value="1">1×</option>
+                        <option value="2">2×</option>
+                        <option value="4">4×</option>
+                    </select>
+                </label>
+            </div>
+        </section>
+
+        <div class="bottom-note">A SMALL WORLD, UNDER YOUR CARE</div>
+    </main>
+
+    <footer>
+        The Abyss
+        Very happy for your visit
+        If you have any bad experiences or any questions
+        Please connect the phone number 08********
+    </footer>
+    <script src="/JS/gameEngine.js"></script>
+    <script src="/JS/aquarium.js"></script>
+    <script src="/CONNECT/APi.js"></script>
+</body>
+
+</html>
