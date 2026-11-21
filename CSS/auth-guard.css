@@ -1,0 +1,90 @@
+```css
+.auth-gate {
+    position: fixed;
+    inset: 0;
+    z-index: 99999;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+
+    background: rgba(0, 5, 12, 0.82);
+    backdrop-filter: blur(8px);
+}
+
+.auth-gate.show {
+    display: flex;
+}
+
+.auth-gate-card {
+    width: min(420px, 100%);
+    padding: 40px 30px;
+    text-align: center;
+
+    background: #071824;
+    border: 1px solid rgba(60, 210, 235, 0.35);
+    box-shadow: 0 0 40px rgba(0, 180, 220, 0.12);
+    color: #eafaff;
+}
+
+.auth-gate-card h2 {
+    font-family: 'Cinzel', serif;
+    color: #46d9eb;
+    font-size: 26px;
+    margin-bottom: 15px;
+}
+
+.auth-gate-card p {
+    color: #9db8c6;
+    font-size: 13px;
+    line-height: 1.8;
+    margin-bottom: 25px;
+}
+
+.auth-gate-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.auth-gate-actions a {
+    text-decoration: none;
+    padding: 14px;
+    font-size: 11px;
+    letter-spacing: 2px;
+    transition: 0.25s;
+}
+
+.auth-gate-login {
+    background: #25c3da;
+    color: #03131c;
+    font-weight: bold;
+}
+
+.auth-gate-signup {
+    border: 1px solid #35c9df;
+    color: #35c9df;
+}
+
+.auth-gate-login:hover {
+    background: #8af0fa;
+}
+
+.auth-gate-signup:hover {
+    background: rgba(53, 201, 223, 0.1);
+}
+
+.auth-gate-close {
+    display: block;
+    margin: 22px auto 0;
+    background: none;
+    border: none;
+    color: #7895a5;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.auth-gate-close:hover {
+    color: white;
+}
+```

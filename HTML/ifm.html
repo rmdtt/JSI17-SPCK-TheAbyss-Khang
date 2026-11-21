@@ -25,12 +25,28 @@
 
         <ul class="nav-links">
             <li>
-                <a href="aqurium.html">Your Aquarium</a>
+                <a href="aquarium.html" onclick="return checkAuthNavigation(event, this.href)">
+                    Your Aquarium
+                </a>
             </li>
             <li>
-                <a href="addCre.html" class="add-btn">Add Creature</a>
+                <a href="addCre.html" class="add-btn" onclick="return checkAuthNavigation(event, this.href)">
+                    Add Creature
+                </a>
             </li>
         </ul>
+
+        <!-- Hiện khi CHƯA đăng nhập -->
+        <div class="nav-auth" id="nav-auth">
+            <a href="login.html" class="login-btn">LOGIN</a>
+            <a href="signup.html" class="signup-btn">SIGN UP</a>
+        </div>
+
+        <!-- Hiện khi ĐÃ đăng nhập -->
+        <div class="nav-user" id="nav-user" style="display:none;">
+            <span id="nav-user-email"></span>
+            <button type="button" id="logout-btn">LOG OUT</button>
+        </div>
     </nav>
 
     <main class="creature-page">
@@ -120,6 +136,14 @@
             Please connect the phone number 08********
         </span>
     </footer>
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-auth-compat.js"></script>
+
+    <script src="/CONNECT/firebase_config.js"></script>
+
+    <!-- Auth Navbar -->
+    <script src="/JS/auth-guard.js"></script>
 </body>
 
 </html>
