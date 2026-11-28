@@ -9,9 +9,6 @@
     <link rel="stylesheet" href="/CSS/ifm.css">
     <title>Information</title>
 </head>
-<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-<script src="/CONNECT/APi.js"></script>
-<script src="/JS/ifm.js"></script>
 
 <body>
     <nav class="navbar">
@@ -128,6 +125,13 @@
 
     </main>
 
+    <div class="add-aquarium-container">
+        <button id="add-to-aquarium-btn" type="button">
+            ADD TO AQUARIUM
+        </button>
+        <p id="add-aquarium-status"></p>
+    </div>
+
     <footer>
         <span>
             The Abyss
@@ -139,11 +143,20 @@
     <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore-compat.js"></script>
 
+    <!-- Firebase configuration -->
     <script src="/CONNECT/firebase_config.js"></script>
 
     <!-- Auth Navbar -->
     <script src="/JS/auth-guard.js"></script>
+
+    <!-- API -->
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+    <script src="/CONNECT/APi.js"></script>
+
+    <!-- Creature information -->
+    <script src="/JS/ifm.js"></script>
 </body>
 
 </html>

@@ -208,3 +208,36 @@ body {
         grid-template-columns: 1fr;
     }
 }
+.add-aquarium-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    margin: 50px auto;
+    padding: 25px;
+}
+
+#add-to-aquarium-btn {
+    padding: 14px 32px;
+    border: 1px solid #55dfff;
+    border-radius: 30px;
+    background: transparent;
+    color: #55dfff;
+    font-size: 15px;
+    font-weight: bold;
+    letter-spacing: 2px;
+    cursor: pointer;
+    transition: 0.3s ease;
+}
+
+#add-to-aquarium-btn:hover {
+    background: #55dfff;
+    color: #061a2b;
+    box-shadow: 0 0 20px rgba(85, 223, 255, 0.5);
+}
+
+#add-aquarium-status {
+    color: #55dfff;
+    font-size: 14px;
+    text-align: center;
+}
