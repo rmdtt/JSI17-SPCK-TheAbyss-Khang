@@ -24,6 +24,7 @@
     </style>
     <link rel="stylesheet" href="/CSS/nav.css">
     <link rel="stylesheet" href="/CSS/ct&footer.css">
+    <link rel="stylesheet" href="/CSS/add-cre.css">
     <title>Add creatures</title>
 </head>
 
@@ -64,7 +65,119 @@
     </nav>
 
     <h1 class="content" id="name">ADD CREATURES</h1>
-    <h2 class="content" id="content">Add your favorate fantasy creatures now</h2>
+    <h2 class="content" id="content">
+        Add your favorite fantasy creatures now
+    </h2>
+
+    <main class="add-cre-container">
+
+        <label class="add-cre-upload" for="creature-image">
+            <h2>UPLOAD YOUR CREATURE</h2>
+            <p>Click here to choose an image</p>
+            <p>PNG, JPG, WEBP</p>
+
+            <input type="file" id="creature-image" accept="image/png,image/jpeg,image/webp">
+        </label>
+
+        <img id="creature-preview" class="add-cre-preview" alt="Creature preview">
+
+        <p id="add-cre-filename"></p>
+
+
+        <section class="add-cre-information">
+
+            <h2>CREATURE INFORMATION</h2>
+            <p class="add-cre-info-subtitle">
+                Provide information about your ocean creature
+            </p>
+
+            <div class="add-cre-form">
+
+                <!-- Scientific Name -->
+                <div class="add-cre-field add-cre-full">
+                    <label for="scientific-name">Scientific Name *</label>
+                    <input type="text" id="scientific-name" placeholder="Example: Melanocetus johnsonii" required
+                        maxlength="120">
+                </div>
+
+                <!-- Size -->
+                <div class="add-cre-field">
+                    <label for="creature-size">Size *</label>
+                    <input type="text" id="creature-size" placeholder="Example: 15 cm" required maxlength="50">
+                </div>
+
+                <!-- Depth Range -->
+                <div class="add-cre-field">
+                    <label for="depth-range">Depth Range *</label>
+                    <input type="text" id="depth-range" placeholder="Example: 1000–2000 m" required maxlength="50">
+                </div>
+
+                <!-- Water Type -->
+                <div class="add-cre-field">
+                    <label for="water-type">Water Type *</label>
+                    <select id="water-type" required>
+                        <option value="">Select water type</option>
+                        <option value="Saltwater">Saltwater</option>
+                        <option value="Freshwater">Freshwater</option>
+                        <option value="Brackish">Brackish Water</option>
+                    </select>
+                </div>
+
+                <!-- Habitat -->
+                <div class="add-cre-field">
+                    <label for="creature-habitat">Habitat *</label>
+                    <select id="creature-habitat" required>
+                        <option value="">Select habitat</option>
+                        <option value="Pelagic">Pelagic (Open Ocean)</option>
+                        <option value="Benthic">Benthic (Ocean Floor)</option>
+                        <option value="Reef">Coral Reef</option>
+                        <option value="Coastal">Coastal Waters</option>
+                        <option value="Deep Sea">Deep Sea</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+
+            </div>
+        </section>
+
+
+        <button type="button" id="add-cre-submit" class="add-cre-btn" disabled>
+            ADD CREATURE
+        </button>
+
+        <p id="add-cre-status" class="add-cre-status"></p>
+
+    </main>
+
+    <!-- REMOVE BACKGROUND MODAL -->
+    <div class="add-cre-modal" id="remove-bg-modal">
+        <div class="add-cre-modal-content">
+
+            <h2>REMOVE BACKGROUND?</h2>
+
+            <p>
+                Removing the background can help your creature
+                blend naturally into the ocean.
+            </p>
+
+            <div class="add-cre-modal-actions">
+
+                <button type="button" id="remove-bg-btn">
+                    REMOVE.BG
+                </button>
+
+                <button type="button" id="continue-add-btn">
+                    CONTINUE
+                </button>
+
+            </div>
+
+            <p style="font-size: 12px; margin-top: 20px; color: #8baab8;">
+                You can skip this step and add your creature with its original background.
+            </p>
+
+        </div>
+    </div>
 
     <footer>
         The Abyss
@@ -72,14 +185,12 @@
         If you have any bad experiences or any questions
         Please connect the phone number 08********
     </footer>
-    <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-auth-compat.js"></script>
 
     <script src="/CONNECT/firebase_config.js"></script>
-
-    <!-- Auth Navbar -->
     <script src="/JS/auth-guard.js"></script>
+    <script src="/JS/add-cre.js"></script>
 </body>
 
 </html>

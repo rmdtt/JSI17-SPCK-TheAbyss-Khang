@@ -1,4 +1,3 @@
-
 const COMMONS_API = "https://commons.wikimedia.org/w/api.php";
 
 const API = {
@@ -12,6 +11,16 @@ const API = {
 const cache = new Map();
 let mobsPromise = null;
 
+// ========================================
+// CẤU HÌNH CÁC VÙNG ĐỘ SÂU
+// ========================================
+
+const DEPTH_ZONES = {
+  shallow: { min: 0, max: 200, count: 7 },
+  medium: { min: 200, max: 1000, count: 15 },
+  deep: { min: 1000, max: 4000, count: 20 },
+  abyssal: { min: 4000, max: 11000, count: 25 }
+};
 
 // ========================================
 // 1. HÀM GỌI API
@@ -538,4 +547,105 @@ async function getFishImages(fishName) {
       image.imageUrl &&
       image.mimeType.toLowerCase().startsWith("image/")
     );
+}
+
+// ========================================
+// 10. LẤY NGẪU NHIÊN SINH VẬT TỪ OBIS
+// ========================================
+
+// Xáo trộn danh sách
+function shuffleSpecies(list) {
+  const shuffled = [...list];
+
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+
+    [shuffled[i], shuffled[j]] =
+      [shuffled[j], shuffled[i]];
+  }
+
+  return shuffled;
+}
+
+
+// Lấy các loài được ghi nhận trong một vùng độ sâu
+async function getRandomOBISSpecies(minDepth, maxDepth, count) {
+  const url = new URL(`${API.obis}/occurrence`);
+
+  url.searchParams.set("startdepth", minDepth);
+  url.searchParams.set("enddepth", maxDepth);
+  url.searchParams.set("size", "1000");
+
+  const result = await fetchJSON(url.toString());
+  const records = result.results || [];
+
+  const uniqueSpecies = new Map();
+
+  records.forEach(record => {
+    const name = record.scientificName?.trim();
+    const depth = Number(record.depth);
+
+    if (!name || !Number.isFinite(depth)) return;
+
+    if (depth < minDepth || depth > maxDepth) return;
+
+    // Chỉ lấy tên loài gồm hai thành phần
+    const parts = name.split(/\s+/);
+
+    if (parts.length !== 2) return;
+
+    // Nếu OBIS có thông tin taxonRank thì kiểm tra cấp loài
+    if (
+      record.taxonRank &&
+      record.taxonRank.toLowerCase() !== "species"
+    ) {
+      return;
+    }
+
+    uniqueSpecies.set(name.toLowerCase(), name);
+  });
+
+  const species = shuffleSpecies(
+    [...uniqueSpecies.values()]
+  );
+
+  return species.slice(0, count);
+}
+
+
+// Lấy danh sách sinh vật cho cả bốn vùng
+async function getRandomCreaturesFromOBIS() {
+  const creatures = {};
+
+  const results = await Promise.all(
+    Object.entries(DEPTH_ZONES).map(
+      async ([zone, config]) => {
+        try {
+          const species = await getRandomOBISSpecies(
+            config.min,
+            config.max,
+            config.count
+          );
+
+          console.log(
+            `OBIS ${zone}: tìm được ${species.length}/${config.count} loài`,
+            species
+          );
+
+          return [zone, species];
+
+        } catch (error) {
+          console.error(`OBIS ${zone} error:`, error);
+
+          return [zone, []];
+        }
+      }
+    )
+  );
+
+  results.forEach(([zone, species]) => {
+    creatures[zone] = species;
+  });
+
+  return creatures;
 }

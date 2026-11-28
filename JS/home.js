@@ -1,112 +1,13 @@
 // =====================================
-// DANH SÁCH SINH VẬT THEO ĐỘ SÂU
-// =====================================
-
-const creaturesByDepth = {
-  shallow: [
-    "Amphiprion ocellaris",
-    "Mola mola",
-    "Triaenodon obesus",
-    "Aetobatus narinari",
-    "Chelonia mydas",
-    "Hippocampus kuda",
-    "Scarus ghobban",
-    "Chaetodon auriga",
-    "Bolbometopon muricatum",
-    "Sphyraena barracuda"
-  ],
-
-  medium: [
-    "Argyropelecus hemigymnus",
-    "Benthosema glaciale",
-    "Xiphias gladius",
-    "Scomber japonicus",
-    "Prionace glauca",
-    "Thunnus obesus",
-    "Hexanchus griseus",
-    "Dosidicus gigas",
-    "Stomiidae",
-    "Anguilla anguilla"
-  ],
-
-  deep: [
-    "Chauliodus sloani",
-    "Idiacanthus antrostomus",
-    "Melanocetus johnsonii",
-    "Anoplogaster cornuta",
-    "Myctophidae",
-    "Vampyroteuthis infernalis",
-    "Mitsukurina owstoni",
-    "Somniosus microcephalus",
-    "Trachipterus arcticus",
-    "Atolla wyvillei"
-  ],
-
-  abyssal: [
-    "Bathypterois grallator",
-    "Pseudoliparis amblystomopsis",
-    "Coryphaenoides armatus",
-    "Scotoplanes globosa",
-    "Hymenaster pellucidus",
-    "Actiniaria",
-    "Munnopsidae",
-    "Copepoda",
-    "Riftia pachyptila",
-    "Siboglinidae"
-  ]
-};
-
-// =====================================
 // LẤY NGẪU NHIÊN SV
 // =====================================
-
-
 const creatureManager = {
-
-  getRandomCreatures(depth, count = 10) {
-
-    const list = creaturesByDepth[depth];
-
-    if (!list) {
-      console.warn("Độ sâu không tồn tại:", depth);
-      return [];
-    }
-
-    // Trộn ngẫu nhiên danh sách
-    const shuffled = [...list];
-
-    for (let i = shuffled.length - 1; i > 0; i--) {
-
-      const j = Math.floor(Math.random() * (i + 1));
-
-      [shuffled[i], shuffled[j]] =
-        [shuffled[j], shuffled[i]];
-
-    }
-
-    return shuffled.slice(
-      0,
-      Math.min(count, shuffled.length)
-    );
-
-  },
-
-  getRandomShallow(count = 10) {
-    return this.getRandomCreatures("shallow", count);
-  },
-
-  getRandomMedium(count = 10) {
-    return this.getRandomCreatures("medium", count);
-  },
-
-  getRandomDeep(count = 10) {
-    return this.getRandomCreatures("deep", count);
-  },
-
-  getRandomAbyssal(count = 10) {
-    return this.getRandomCreatures("abyssal", count);
+  activeCreatures: {
+    shallow: [],
+    medium: [],
+    deep: [],
+    abyssal: []
   }
-
 };
 
 const imageCache = new Map();
@@ -244,97 +145,97 @@ async function mapLimit(items, limit, callback) {
 
 function generateCreaturePositions(zone, count, options = {}) {
 
-    const {
-        imageSize = 120,
-        gapX = 35,
-        gapY = 35,
-        leftReserved = 150,
-        rightReserved = 100,
-        padding = 20,
+  const {
+    imageSize = 120,
+    gapX = 35,
+    gapY = 35,
+    leftReserved = 150,
+    rightReserved = 100,
+    padding = 20,
 
-        // Mức độ ngẫu nhiên của vị trí
-        randomness = 0.7,
+    // Mức độ ngẫu nhiên của vị trí
+    randomness = 0.7,
 
-        // Số lần thử tìm vị trí phù hợp
-        maxAttempts = 100
-    } = options;
+    // Số lần thử tìm vị trí phù hợp
+    maxAttempts = 100
+  } = options;
 
-    const width = zone.clientWidth;
-    const height = zone.clientHeight;
+  const width = zone.clientWidth;
+  const height = zone.clientHeight;
 
-    const minX = leftReserved + imageSize / 2 + padding;
-    const maxX = width - rightReserved - imageSize / 2 - padding;
+  const minX = leftReserved + imageSize / 2 + padding;
+  const maxX = width - rightReserved - imageSize / 2 - padding;
 
-    const minY = imageSize / 2 + padding;
-    const maxY = height - imageSize / 2 - padding;
+  const minY = imageSize / 2 + padding;
+  const maxY = height - imageSize / 2 - padding;
 
-    if (
-        count <= 0 ||
-        maxX <= minX ||
-        maxY <= minY
-    ) {
-        return [];
+  if (
+    count <= 0 ||
+    maxX <= minX ||
+    maxY <= minY
+  ) {
+    return [];
+  }
+
+  const positions = [];
+
+  // Khoảng cách tối thiểu giữa hai sinh vật
+  const minDistance = imageSize + Math.min(gapX, gapY);
+
+  // Kiểm tra vị trí có quá gần sinh vật khác không
+  function isValidPosition(x, y) {
+
+    for (const creature of positions) {
+
+      const dx = x - creature.x;
+      const dy = y - creature.y;
+
+      const distance = Math.sqrt(dx * dx + dy * dy);
+
+      if (distance < minDistance) {
+        return false;
+      }
     }
 
-    const positions = [];
+    return true;
+  }
 
-    // Khoảng cách tối thiểu giữa hai sinh vật
-    const minDistance = imageSize + Math.min(gapX, gapY);
+  // Tạo vị trí ngẫu nhiên
+  for (let i = 0; i < count; i++) {
 
-    // Kiểm tra vị trí có quá gần sinh vật khác không
-    function isValidPosition(x, y) {
+    let placed = false;
 
-        for (const creature of positions) {
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
 
-            const dx = x - creature.x;
-            const dy = y - creature.y;
+      const x = minX + Math.random() * (maxX - minX);
+      const y = minY + Math.random() * (maxY - minY);
 
-            const distance = Math.sqrt(dx * dx + dy * dy);
+      if (isValidPosition(x, y)) {
 
-            if (distance < minDistance) {
-                return false;
-            }
-        }
+        positions.push({
+          x,
+          y,
+          rotation: (Math.random() - 0.5) * 12,
+          scale: 0.85 + Math.random() * 0.3
+        });
 
-        return true;
+        placed = true;
+        break;
+      }
     }
 
-    // Tạo vị trí ngẫu nhiên
-    for (let i = 0; i < count; i++) {
-
-        let placed = false;
-
-        for (let attempt = 0; attempt < maxAttempts; attempt++) {
-
-            const x = minX + Math.random() * (maxX - minX);
-            const y = minY + Math.random() * (maxY - minY);
-
-            if (isValidPosition(x, y)) {
-
-                positions.push({
-                    x,
-                    y,
-                    rotation: (Math.random() - 0.5) * 12,
-                    scale: 0.85 + Math.random() * 0.3
-                });
-
-                placed = true;
-                break;
-            }
-        }
-
-        // Nếu không tìm được vị trí phù hợp,
-        // bỏ qua sinh vật này để tránh chồng lấn.
-        if (!placed) {
-            console.warn(
-                "Không tìm được vị trí cho sinh vật:",
-                i,
-                zone.id
-            );
-        }
+    // Nếu không tìm được vị trí phù hợp,
+    // bỏ qua sinh vật này để tránh chồng lấn.
+    if (!placed) {
+      console.warn(
+        "Không tìm được vị trí cho sinh vật:",
+        i,
+        zone.id
+      );
     }
+  }
 
-    return positions;
+  return positions;
 }
 
 
@@ -343,7 +244,6 @@ function generateCreaturePositions(zone, count, options = {}) {
 // =====================================
 
 async function renderCreatures(depth) {
-
   const zone = document.getElementById(depth);
 
   if (!zone) {
@@ -352,7 +252,6 @@ async function renderCreatures(depth) {
   }
 
   const speciesList = creatureManager.activeCreatures?.[depth];
-
   if (!speciesList) return;
 
   zone.style.position = "relative";
@@ -372,7 +271,7 @@ async function renderCreatures(depth) {
     }))
     .filter(item => item.image);
 
-  // Tính vị trí
+  // Tạo vị trí
   const positions = generateCreaturePositions(
     zone,
     validSpecies.length
@@ -383,82 +282,49 @@ async function renderCreatures(depth) {
     return;
   }
 
-  // Lưu các phần tử hiện tại để tái sử dụng
-  const existingCreatures = new Map();
-
-  zone.querySelectorAll(".ocean-creature").forEach(
-    creature => {
-
-      const name = creature.dataset.species;
-
-      if (name) {
-        existingCreatures.set(name, creature);
-      }
-
-    }
-  );
-
   const fragment = document.createDocumentFragment();
 
   validSpecies.forEach((species, index) => {
-
     const position = positions[index];
 
-    let creature = existingCreatures.get(
-      species.scientificName
-    );
+    const creature = document.createElement("a");
+    creature.className = "ocean-creature";
 
-    // Tạo mới nếu chưa có
-    if (!creature) {
+    creature.dataset.species = species.scientificName;
 
-      creature = document.createElement("a");
-
-      creature.className = "ocean-creature";
-
-      creature.dataset.species =
-        species.scientificName;
-
-      const img = document.createElement("img");
-
-      img.alt = species.scientificName;
-
-      img.loading = "lazy";
-
-      creature.appendChild(img);
-
-    }
-
-    // Cập nhật liên kết
     creature.href =
       `ifm.html?species=${encodeURIComponent(
         species.scientificName
       )}`;
 
-    // Cập nhật vị trí
     creature.style.left = `${position.x}px`;
     creature.style.top = `${position.y}px`;
+    creature.style.transform = "translate(-50%, -50%)";
 
-    creature.style.transform =
-      "translate(-50%, -50%)";
+    const img = document.createElement("img");
 
-    // Cập nhật ảnh
-    creature.querySelector("img").src = species.image;
+    img.src = species.image;
+    img.alt = species.scientificName;
+    img.loading = "lazy";
 
+    // Kích thước cố định
+    img.style.width = "120px";
+    img.style.height = "120px";
+    img.style.objectFit = "contain";
+
+    creature.appendChild(img);
     fragment.appendChild(creature);
-
   });
 
-  // Thay thế các phần tử cũ
+  // Xóa sinh vật cũ
   zone.querySelectorAll(".ocean-creature").forEach(
     element => element.remove()
   );
 
+  // Hiển thị sinh vật mới
   zone.appendChild(fragment);
 
-  console.log(
-    `${depth}: ${validSpecies.length} sinh vật`
-  );
-
+  console.log(`${depth}: ${validSpecies.length} sinh vật`);
 }
 
 // =====================================
@@ -498,27 +364,28 @@ creatureManager.activeCreatures = {
 // =====================================
 
 document.addEventListener("DOMContentLoaded", async () => {
-
   console.log("Exploring The Abyss...");
 
-  // Chọn sinh vật ngẫu nhiên
-  creatureManager.activeCreatures.shallow =
-    creatureManager.getRandomShallow(10);
+  try {
+    // Kiểm tra hàm lấy dữ liệu API
+    if (typeof getRandomCreaturesFromOBIS !== "function") {
+      throw new Error("Không tìm thấy getRandomCreaturesFromOBIS() trong APi.js");
+    }
 
-  creatureManager.activeCreatures.medium =
-    creatureManager.getRandomMedium(10);
+    // Lấy sinh vật từ API
+    const creatures = await getRandomCreaturesFromOBIS();
 
-  creatureManager.activeCreatures.deep =
-    creatureManager.getRandomDeep(10);
+    console.log("Dữ liệu sinh vật từ API:", creatures);
 
-  creatureManager.activeCreatures.abyssal =
-    creatureManager.getRandomAbyssal(10);
+    creatureManager.activeCreatures = creatures;
 
-  // Hiển thị
-  await renderAllCreatures();
+    // Chỉ render một lần
+    await renderAllCreatures();
 
-  console.log("The Abyss is ready!");
-
+    console.log("The Abyss is ready!");
+  } catch (error) {
+    console.error("Lỗi tải sinh vật:", error);
+  }
 });
 
 
@@ -589,3 +456,16 @@ document.addEventListener("DOMContentLoaded", () => {
     position: zone && getComputedStyle(zone).position
   });
 });
+
+console.log("REAL_SCALE:", REAL_SCALE);
+console.log("getMOBSInfo:", typeof getMOBSInfo);
+
+getMOBSInfo("Balaenoptera musculus")
+  .then(data => {
+    console.log("MOBS TEST:", data);
+    console.log(
+      "SIZE TEST:",
+      calculateCreatureSize(data?.lengthCm)
+    );
+  })
+  .catch(error => console.error("MOBS TEST ERROR:", error));

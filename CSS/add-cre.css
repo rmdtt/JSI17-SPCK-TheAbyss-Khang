@@ -1,0 +1,333 @@
+
+/* =================================
+   THE ABYSS - ADD CREATURES
+================================= */
+
+.add-cre-container {
+    width: min(850px, 92%);
+    margin: 35px auto 110px;
+    color: #c4dce8;
+}
+
+/* Upload section */
+
+.add-cre-upload {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 210px;
+    padding: 30px;
+    border: 1px dashed rgba(54, 217, 255, 0.65);
+    border-radius: 18px;
+    background: linear-gradient(
+        145deg,
+        rgba(12, 54, 75, 0.65),
+        rgba(3, 23, 37, 0.9)
+    );
+    cursor: pointer;
+    transition: 0.3s ease;
+}
+
+.add-cre-upload:hover {
+    border-color: #36d9ff;
+    background: rgba(21, 75, 100, 0.5);
+    box-shadow: 0 0 25px rgba(54, 217, 255, 0.15);
+}
+
+.add-cre-upload h2 {
+    color: #36d9ff;
+    font-size: 20px;
+    letter-spacing: 3px;
+    margin-bottom: 8px;
+}
+
+.add-cre-upload p {
+    color: #91b8c9;
+    font-size: 14px;
+    margin: 5px;
+}
+
+.add-cre-upload input {
+    display: none;
+}
+
+/* Preview */
+
+.add-cre-preview {
+    display: none;
+    max-width: 230px;
+    max-height: 230px;
+    object-fit: contain;
+    margin: 25px auto 15px;
+    filter: drop-shadow(0 0 15px rgba(54, 217, 255, 0.25));
+}
+
+#add-cre-filename {
+    text-align: center;
+    color: #36d9ff;
+    font-size: 13px;
+    overflow-wrap: anywhere;
+}
+
+/* Information card */
+
+.add-cre-information {
+    margin-top: 35px;
+    padding: 32px;
+    border: 1px solid rgba(54, 217, 255, 0.25);
+    border-radius: 18px;
+    background: linear-gradient(
+        145deg,
+        rgba(8, 39, 57, 0.95),
+        rgba(3, 20, 33, 0.98)
+    );
+    box-shadow: 0 10px 35px rgba(0, 0, 0, 0.2);
+}
+
+.add-cre-information h2 {
+    color: #36d9ff;
+    font-size: 23px;
+    letter-spacing: 3px;
+    text-align: center;
+    margin: 0 0 8px;
+}
+
+.add-cre-info-subtitle {
+    text-align: center;
+    color: #789eaf;
+    font-size: 13px;
+    margin-bottom: 30px;
+}
+
+/* Form layout */
+
+.add-cre-form {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 23px 20px;
+}
+
+.add-cre-field {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+    min-width: 0;
+}
+
+.add-cre-full {
+    grid-column: 1 / -1;
+}
+
+.add-cre-field label {
+    color: #a9dce9;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+/* Inputs */
+
+.add-cre-field input,
+.add-cre-field select,
+.add-cre-field textarea {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 14px 15px;
+    border: 1px solid rgba(93, 164, 190, 0.25);
+    border-radius: 9px;
+    outline: none;
+    background: rgba(2, 19, 31, 0.8);
+    color: #d8f3ff;
+    font-family: inherit;
+    font-size: 14px;
+    transition: 0.25s ease;
+}
+
+.add-cre-field input:hover,
+.add-cre-field select:hover,
+.add-cre-field textarea:hover {
+    border-color: rgba(54, 217, 255, 0.5);
+}
+
+.add-cre-field input:focus,
+.add-cre-field select:focus,
+.add-cre-field textarea:focus {
+    border-color: #36d9ff;
+    box-shadow: 0 0 12px rgba(54, 217, 255, 0.12);
+}
+
+.add-cre-field input::placeholder,
+.add-cre-field textarea::placeholder {
+    color: #57798a;
+}
+
+.add-cre-field select {
+    cursor: pointer;
+}
+
+.add-cre-field select option {
+    background: #071d2b;
+    color: #d8f3ff;
+}
+
+/* Add button */
+
+.add-cre-btn {
+    display: block;
+    min-width: 210px;
+    margin: 35px auto 0;
+    padding: 15px 30px;
+    border: 1px solid #36d9ff;
+    border-radius: 9px;
+    background: linear-gradient(
+        100deg,
+        #36d9ff,
+        #16a8d4
+    );
+    color: #031a27;
+    font-size: 14px;
+    font-weight: 800;
+    letter-spacing: 2px;
+    cursor: pointer;
+    transition: 0.3s ease;
+}
+
+.add-cre-btn:hover:not(:disabled) {
+    transform: translateY(-3px);
+    box-shadow: 0 0 22px rgba(54, 217, 255, 0.4);
+}
+
+.add-cre-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.add-cre-status {
+    min-height: 22px;
+    margin-top: 15px;
+    text-align: center;
+    color: #36d9ff;
+    font-size: 13px;
+}
+
+/* =================================
+   REMOVE BACKGROUND MODAL
+================================= */
+
+.add-cre-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: rgba(0, 10, 20, 0.85);
+    backdrop-filter: blur(7px);
+}
+
+.add-cre-modal.active {
+    display: flex;
+}
+
+.add-cre-modal-content {
+    width: 100%;
+    max-width: 420px;
+    padding: 32px 26px;
+    border: 1px solid #36d9ff;
+    border-radius: 18px;
+    background: linear-gradient(
+        145deg,
+        #092b3d,
+        #041521
+    );
+    color: #c4dce8;
+    text-align: center;
+    box-shadow: 0 0 30px rgba(54, 217, 255, 0.2);
+    animation: addCreModalIn 0.3s ease;
+}
+
+.add-cre-modal-content h2 {
+    color: #36d9ff;
+    font-size: 22px;
+    letter-spacing: 2px;
+    margin-bottom: 15px;
+}
+
+.add-cre-modal-content p {
+    color: #a9c9d8;
+    font-size: 14px;
+    line-height: 1.7;
+}
+
+.add-cre-modal-actions {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 25px;
+    flex-wrap: wrap;
+}
+
+.add-cre-modal button {
+    min-width: 135px;
+    padding: 12px 18px;
+    border: 1px solid #36d9ff;
+    border-radius: 8px;
+    background: transparent;
+    color: #36d9ff;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.3s ease;
+}
+
+.add-cre-modal button:hover {
+    background: #36d9ff;
+    color: #031a27;
+    box-shadow: 0 0 15px rgba(54, 217, 255, 0.4);
+}
+
+@keyframes addCreModalIn {
+    from {
+        opacity: 0;
+        transform: translateY(15px) scale(0.96);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Responsive */
+
+@media (max-width: 600px) {
+    .add-cre-container {
+        width: 94%;
+    }
+
+    .add-cre-information {
+        padding: 22px 17px;
+    }
+
+    .add-cre-form {
+        grid-template-columns: 1fr;
+        gap: 18px;
+    }
+
+    .add-cre-full {
+        grid-column: auto;
+    }
+
+    .add-cre-upload {
+        min-height: 175px;
+        padding: 25px 15px;
+    }
+
+    .add-cre-modal-actions {
+        flex-direction: column;
+    }
+
+    .add-cre-modal button {
+        width: 100%;
+    }
+}
