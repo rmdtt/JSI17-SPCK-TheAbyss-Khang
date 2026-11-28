@@ -7,6 +7,10 @@ const customId = params.get("customId");
 const imageElement = document.getElementById("creature-image");
 const imageLoading = document.getElementById("image-loading");
 
+// Sinh vật hiện đang được xem trên trang
+let currentCreature = null;
+let currentUser = null;
+
 
 // =====================================
 // HÀM HIỂN THỊ TEXT
@@ -122,6 +126,14 @@ async function loadAPIcreature() {
 
         const imageURL = await getCreatureImage(data.scientificName);
         displayCreatureImage(imageURL, data.scientificName);
+        currentCreature = {
+            scientificName: data.scientificName,
+            displayName: data.acceptedName || data.scientificName,
+            imageURL: imageURL,
+            size: data.size,
+            depth: data.depth,
+            waterType: data.waterType || "Unknown"
+        };
 
         setText("creature-name", data.acceptedName);
         setText("scientific-name", data.scientificName);
@@ -207,6 +219,14 @@ async function loadCustomCreature(user) {
         }
 
         const data = creatureDoc.data();
+        currentCreature = {
+            scientificName: data.scientificName,
+            displayName: data.scientificName,
+            imageURL: data.imageURL,
+            size: data.size,
+            depth: data.depthRange,
+            waterType: data.waterType || "Unknown"
+        };
 
         // Hiển thị ảnh Cloudinary
         displayCreatureImage(

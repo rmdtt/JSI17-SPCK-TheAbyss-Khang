@@ -2,24 +2,103 @@
   const $ = (id) => document.getElementById(id);
   const aquarium = $("aquarium");
   const bubbleLayer = $("bubble-layer");
+  const fish = $("fish");
 
   let lastFrame = performance.now();
-  let bubbleTimer = 0;
 
   function createBubble() {
     const state = AbyssGame.getState();
-    if (state.paused || !state.lightOn) return;
+
+    if (state.paused || !state.lightOn || !bubbleLayer) return;
 
     const bubble = document.createElement("span");
     bubble.className = "bubble";
+
     const size = 3 + Math.random() * 7;
+
     bubble.style.width = `${size}px`;
     bubble.style.height = `${size}px`;
     bubble.style.left = `${5 + Math.random() * 90}%`;
     bubble.style.animationDuration = `${4 + Math.random() * 5}s`;
+
     bubbleLayer.appendChild(bubble);
+
     window.setTimeout(() => bubble.remove(), 9500);
   }
+
+  // =====================================
+  // HIỂN THỊ SINH VẬT TRONG AQUARIUM
+  // =====================================
+
+  function displayAquariumCreature(data) {
+    if (!data || !fish) return;
+
+    fish.replaceChildren();
+
+    const img = document.createElement("img");
+
+    img.src = data.imageURL;
+    img.alt = data.scientificName || "Your creature";
+    img.style.width = "180px";
+    img.style.height = "180px";
+    img.style.objectFit = "contain";
+
+    fish.appendChild(img);
+
+    const nameElement = $("creature-name");
+
+    if (nameElement) {
+      nameElement.textContent =
+        data.displayName || data.scientificName || "Your Creature";
+    }
+
+    const speciesElement = document.querySelector(".creature-card .species");
+
+    if (speciesElement) {
+      speciesElement.textContent =
+        data.scientificName || "Virtual marine creature";
+    }
+
+    console.log("Aquarium creature loaded:", data);
+  }
+
+  // =====================================
+  // TẢI SINH VẬT TỪ FIRESTORE
+  // =====================================
+
+  async function loadAquariumCreature(user) {
+    if (!user || typeof db === "undefined") return;
+
+    try {
+      const creatureDoc = await db
+        .collection("users")
+        .doc(user.uid)
+        .collection("aquarium")
+        .doc("current")
+        .get();
+
+      if (!creatureDoc.exists) {
+        console.log("Tài khoản chưa chọn sinh vật Aquarium.");
+        return;
+      }
+
+      const data = creatureDoc.data();
+
+      if (!data.imageURL) {
+        console.warn("Sinh vật Aquarium chưa có ảnh.");
+        return;
+      }
+
+      displayAquariumCreature(data);
+
+    } catch (error) {
+      console.error("Không thể tải sinh vật Aquarium:", error);
+    }
+  }
+
+  // =====================================
+  // GAME RENDER
+  // =====================================
 
   function render() {
     const s = AbyssGame.getState();
@@ -34,51 +113,117 @@
     $("mood-icon").textContent = s.moodIcon;
     $("notice").textContent = s.lastNotice;
     $("temperature-value").textContent = `${s.temperature.toFixed(1)}°C`;
-    $("temp-hint").textContent = `Target ${s.targetTemperature.toFixed(1)}°C · ${s.phase.toLowerCase()} variation simulated`;
+    $("temp-hint").textContent =
+      `Target ${s.targetTemperature.toFixed(1)}°C · ${s.phase.toLowerCase()} variation simulated`;
 
     $("health-meter").style.width = `${s.health}%`;
     $("hunger-meter").style.width = `${s.hunger}%`;
     $("clean-meter").style.width = `${s.cleanliness}%`;
     $("mood-meter").style.width = `${s.mood}%`;
-    $("temp-indicator").style.left = `${((s.targetTemperature - 10) / 25) * 100}%`;
+
+    $("temp-indicator").style.left =
+      `${((s.targetTemperature - 10) / 25) * 100}%`;
 
     aquarium.classList.toggle("light-off", !s.lightOn);
+
     $("light-label").textContent = `Light: ${s.lightOn ? "On" : "Off"}`;
     $("toy-label").textContent = `Toy: ${s.toyActive ? "On" : "Off"}`;
+
     $("toy-button").classList.toggle("active", s.toyActive);
     $("light-button").classList.toggle("active", s.lightOn);
+
     $("pause-button").textContent = s.paused ? "▶" : "Ⅱ";
-    $("pause-button").title = s.paused ? "Resume simulation" : "Pause simulation";
+    $("pause-button").title =
+      s.paused ? "Resume simulation" : "Pause simulation";
   }
 
   function frame(now) {
     const delta = Math.min((now - lastFrame) / 1000, 0.25);
+
     lastFrame = now;
+
     AbyssGame.step(delta);
     render();
+
     requestAnimationFrame(frame);
   }
 
-  $("feed-button").addEventListener("click", () => { AbyssGame.feed(); render(); });
-  $("clean-button").addEventListener("click", () => { AbyssGame.cleanTank(); render(); });
-  $("toy-button").addEventListener("click", () => { AbyssGame.toggleToy(); render(); });
-  $("light-button").addEventListener("click", () => { AbyssGame.toggleLight(); render(); });
-  $("temp-down").addEventListener("click", () => { AbyssGame.adjustTemperature(-0.5); render(); });
-  $("temp-up").addEventListener("click", () => { AbyssGame.adjustTemperature(0.5); render(); });
-  $("pause-button").addEventListener("click", () => { AbyssGame.togglePause(); render(); });
-  $("speed-select").addEventListener("change", (event) => AbyssGame.setSpeed(event.target.value));
-  $("save-button").addEventListener("click", () => { AbyssGame.save(); render(); });
+  // =====================================
+  // CÁC NÚT ĐIỀU KHIỂN
+  // =====================================
+
+  $("feed-button").addEventListener("click", () => {
+    AbyssGame.feed();
+    render();
+  });
+
+  $("clean-button").addEventListener("click", () => {
+    AbyssGame.cleanTank();
+    render();
+  });
+
+  $("toy-button").addEventListener("click", () => {
+    AbyssGame.toggleToy();
+    render();
+  });
+
+  $("light-button").addEventListener("click", () => {
+    AbyssGame.toggleLight();
+    render();
+  });
+
+  $("temp-down").addEventListener("click", () => {
+    AbyssGame.adjustTemperature(-0.5);
+    render();
+  });
+
+  $("temp-up").addEventListener("click", () => {
+    AbyssGame.adjustTemperature(0.5);
+    render();
+  });
+
+  $("pause-button").addEventListener("click", () => {
+    AbyssGame.togglePause();
+    render();
+  });
+
+  $("speed-select").addEventListener("change", (event) => {
+    AbyssGame.setSpeed(event.target.value);
+  });
+
+  $("save-button").addEventListener("click", () => {
+    AbyssGame.save();
+    render();
+  });
+
   $("reset-button").addEventListener("click", () => {
-    if (confirm("Start a new aquarium simulation? Your current in-memory progress will be reset.")) {
+    if (
+      confirm(
+        "Start a new aquarium simulation? Your current in-memory progress will be reset."
+      )
+    ) {
       AbyssGame.reset();
       localStorage.removeItem("theAbyssAquariumSave_v1");
       render();
     }
   });
 
-  // Load a previous save if one exists.
+  // =====================================
+  // KHỞI ĐỘNG
+  // =====================================
+
   AbyssGame.load();
   render();
+
+  // Theo dõi đăng nhập Firebase
+  if (typeof auth !== "undefined") {
+    auth.onAuthStateChanged((user) => {
+      if (user) {
+        loadAquariumCreature(user);
+      }
+    });
+  }
+
   window.setInterval(createBubble, 650);
   requestAnimationFrame(frame);
 })();
